@@ -25,7 +25,12 @@ export default defineConfig({
     starlight({
       title: 'L2NX Dev Portal',
       description: 'Developer documentation for the L2NX platform: game server adapter, l2nx.top, integration API.',
-      logo: { light: './src/assets/logo-light.png', dark: './src/assets/logo-dark.png', alt: 'L2NX' },
+      logo: { src: './src/assets/logo.png', alt: 'L2NX' },
+      components: {
+        SiteTitle: './src/components/SiteTitle.astro',
+        ThemeProvider: './src/components/ThemeProvider.astro',
+        ThemeSelect: './src/components/ThemeSelect.astro',
+      },
       favicon: '/favicon.png',
       defaultLocale: 'root',
       locales: {
