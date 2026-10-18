@@ -104,12 +104,33 @@ jobs:
           echo "::error::Failed to push after 5 retries — concurrent bump collision?"
           exit 1
 
+  # Inline copy of the org notify-deploy workflow: a public repository cannot call reusable workflows
+  # from a private one.
   notify:
     needs: [build-push, deploy]
     if: always()
-    uses: l2nx/.github/.github/workflows/notify-deploy.yml@main
-    with:
-      label: dev web
-      version: ${{ needs.build-push.outputs.version }}
-      status: ${{ (needs.build-push.result == 'success' && needs.deploy.result == 'success') && 'success' || format('build={0} deploy={1}', needs.build-push.result, needs.deploy.result) }}
-    secrets: inherit
+    runs-on: [self-hosted, linux, nexus]
+    steps:
+      - name: Notify DEPLOYS topic
+        env:
+          OPS_ALERTS_BOT_TOKEN: ${{ secrets.OPS_ALERTS_BOT_TOKEN }}
+          DEPLOYS_CHAT_ID: '-1003938945168'
+          DEPLOYS_TOPIC_ID: '648'
+          VERSION: ${{ needs.build-push.outputs.version }}
+          STATUS: ${{ (needs.build-push.result == 'success' && needs.deploy.result == 'success') && 'success' || format('build={0} deploy={1}', needs.build-push.result, needs.deploy.result) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "${OPS_ALERTS_BOT_TOKEN:-}" ] || { echo "no token, skip"; exit 0; }
+          if [ "$STATUS" = "success" ]; then
+            emoji="✅"; status="deployed"
+          else
+            emoji="🔴"; status="failed (${STATUS})"
+          fi
+          nl=$'\n'
+          text="${emoji} <b>[deploy]</b> dev web <code>${VERSION:-n/a}</code> — ${status}${nl}<a href=\"${RUN_URL}\">actions run</a>"
+          curl -fsS -m 10 "https://api.telegram.org/bot${OPS_ALERTS_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${DEPLOYS_CHAT_ID}" \
+            --data-urlencode "message_thread_id=${DEPLOYS_TOPIC_ID}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text=${text}" >/dev/null || echo "notify failed (non-fatal)"
