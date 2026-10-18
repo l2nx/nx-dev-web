@@ -1,0 +1,32 @@
+@import "@l2nx/ui/fonts.css";
+@import "@l2nx/ui/theme.css";
+
+/*
+ * The @l2nx/ui tokens switch with data-theme themselves, so one mapping serves both themes.
+ * The accent is the logo turquoise, not the kit's.
+ */
+:root[data-theme] {
+  --sl-font: "Onest Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --sl-color-white: var(--foreground);
+  --sl-color-gray-1: var(--foreground);
+  --sl-color-gray-2: var(--muted-foreground);
+  --sl-color-gray-3: var(--faint-foreground);
+  --sl-color-gray-4: color-mix(in oklab, var(--faint-foreground) 55%, var(--background));
+  --sl-color-gray-5: var(--surface-solid);
+  --sl-color-gray-6: var(--card);
+  --sl-color-gray-7: var(--card);
+  --sl-color-black: var(--background);
+}
+
+:root[data-theme="dark"] {
+  --sl-color-accent-low: oklch(0.3 0.06 195);
+  --sl-color-accent: oklch(0.8 0.14 195);
+  --sl-color-accent-high: oklch(0.91 0.12 192);
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: oklch(0.92 0.05 192);
+  --sl-color-accent: oklch(0.52 0.11 195);
+  --sl-color-accent-high: oklch(0.36 0.08 195);
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.astro/
+.plan/
+PLAN-*.md
+.env

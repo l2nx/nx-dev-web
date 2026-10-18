@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://l2nx.dev/sitemap-index.xml

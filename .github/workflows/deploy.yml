@@ -1,0 +1,115 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # @l2nx/ui comes from GitHub Packages; the package grants this repo read access, so no PAT is needed.
+  packages: read
+
+concurrency:
+  group: deploy-${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  APP_NAME: dev-web
+  DEPLOY_ENV: prod
+
+jobs:
+  build-push:
+    runs-on: [self-hosted, linux, nexus]
+    outputs:
+      version: ${{ steps.ver.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: echo "value=$(date -u +%Y%m%d)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set image name
+        id: image
+        run: echo "value=${{ secrets.DOCKER_REGISTRY_PUSH }}/${{ env.APP_NAME }}:${{ steps.ver.outputs.value }}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.DOCKER_REGISTRY_PASSWORD }}" | \
+            docker login ${{ secrets.DOCKER_REGISTRY_PUSH }} \
+              -u "${{ secrets.DOCKER_REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Prepare npmrc for private packages
+        id: npmrc
+        run: |
+          NPMRC_FILE=$(mktemp)
+          cat > "$NPMRC_FILE" <<EOF
+          @l2nx:registry=https://npm.pkg.github.com
+          //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+          EOF
+          echo "path=$NPMRC_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push image
+        run: |
+          DOCKER_BUILDKIT=1 docker build \
+            --secret id=npmrc,src="${{ steps.npmrc.outputs.path }}" \
+            -t "${{ steps.image.outputs.value }}" .
+          docker push "${{ steps.image.outputs.value }}"
+
+      - name: Cleanup npmrc
+        if: always() && steps.npmrc.outputs.path != ''
+        run: rm -f "${{ steps.npmrc.outputs.path }}"
+
+      - name: Prune old images on runner
+        run: docker image prune -f --filter "until=168h"
+
+      - name: Logout from registry
+        if: always()
+        run: docker logout ${{ secrets.DOCKER_REGISTRY_PUSH }}
+
+  deploy:
+    needs: build-push
+    runs-on: [self-hosted, linux, nexus]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: l2nx/nx-infra
+          token: ${{ secrets.NX_INFRA_PAT }}
+          fetch-depth: 0
+
+      - name: Verify tooling
+        run: python3 -c "import ruamel.yaml; print(ruamel.yaml.__version__)"
+
+      - name: Bump image tag in compose
+        env:
+          VERSION: ${{ needs.build-push.outputs.version }}
+        run: python3 .github/scripts/bump-image.py "${{ env.DEPLOY_ENV }}" "${{ env.APP_NAME }}" "$VERSION"
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ needs.build-push.outputs.version }}
+        run: |
+          git config user.name "ci-${{ github.repository }}"
+          git config user.email "ci@l2nx.invalid"
+          if git diff --quiet; then
+            echo "::notice::Version already $VERSION — nothing to commit"
+            exit 0
+          fi
+          git commit -q -am "deploy ${{ env.DEPLOY_ENV }} ${{ env.APP_NAME }} $VERSION"
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase origin master && git push -q origin master && exit 0
+            sleep $((RANDOM % 10 + 5))
+          done
+          echo "::error::Failed to push after 5 retries — concurrent bump collision?"
+          exit 1
+
+  notify:
+    needs: [build-push, deploy]
+    if: always()
+    uses: l2nx/.github/.github/workflows/notify-deploy.yml@main
+    with:
+      label: dev web
+      version: ${{ needs.build-push.outputs.version }}
+      status: ${{ (needs.build-push.result == 'success' && needs.deploy.result == 'success') && 'success' || format('build={0} deploy={1}', needs.build-push.result, needs.deploy.result) }}
+    secrets: inherit

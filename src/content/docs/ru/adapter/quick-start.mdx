@@ -1,0 +1,200 @@
+---
+title: Быстрый старт
+description: Добавить адаптер в игровой сервер, настроить l2nx.properties и проверить, что сервер подключился к L2NX.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Шаги 1–3 — для разработчика хоста, который собирает игровой сервер. Если адаптер уже есть в вашей сборке, переходите
+к [шагу 4](#4-получите-ключ-сервера).
+
+## 1. Добавьте зависимости
+
+Все модули лежат в Maven Central в группе `app.l2nx`. У каждого модуля своя версия: возьмите последнюю на
+[Maven Central](https://central.sonatype.com/namespace/app.l2nx) или в [changelog](/ru/adapter/changelog/) и
+подставьте вместо `X.Y.Z`.
+
+Игровому серверу нужны core, мигратор схемы и Liquibase 5. Модули синхронизации добавляются по необходимости (см.
+[модули](/ru/adapter/overview/#модули)).
+
+<Tabs syncKey="build">
+  <TabItem label="Gradle">
+
+```kotlin title="build.gradle.kts"
+dependencies {
+    implementation("app.l2nx:nx-gs-adapter-core:X.Y.Z")
+    runtimeOnly("app.l2nx:nx-gs-db-migrator-liquibase5:X.Y.Z")
+    runtimeOnly("org.liquibase:liquibase-core:5.0.4")
+
+    // Optional: only the sync modules the server uses
+    runtimeOnly("app.l2nx:nx-gs-db-sync-core:X.Y.Z")
+    runtimeOnly("app.l2nx:nx-gs-runtime-sync-core:X.Y.Z")
+    runtimeOnly("app.l2nx:nx-gs-gd-sync-core:X.Y.Z")
+}
+```
+
+  </TabItem>
+  <TabItem label="Maven">
+
+```xml title="pom.xml"
+<dependency>
+  <groupId>app.l2nx</groupId>
+  <artifactId>nx-gs-adapter-core</artifactId>
+  <version>X.Y.Z</version>
+</dependency>
+<dependency>
+  <groupId>app.l2nx</groupId>
+  <artifactId>nx-gs-db-migrator-liquibase5</artifactId>
+  <version>X.Y.Z</version>
+  <scope>runtime</scope>
+</dependency>
+<dependency>
+  <groupId>org.liquibase</groupId>
+  <artifactId>liquibase-core</artifactId>
+  <version>5.0.4</version>
+  <scope>runtime</scope>
+</dependency>
+
+<!-- Optional: only the sync modules the server uses -->
+<dependency>
+  <groupId>app.l2nx</groupId>
+  <artifactId>nx-gs-db-sync-core</artifactId>
+  <version>X.Y.Z</version>
+  <scope>runtime</scope>
+</dependency>
+```
+
+  </TabItem>
+</Tabs>
+
+`nx-gs-adapter-api`, `nx-gs-kafka` и `nx-gs-commons` приходят транзитивно. Подходит любой Liquibase 5.x; адаптер
+тестируется на 5.0.4.
+
+:::caution
+Если вы явно фиксируете версии `nx-gs-adapter-api`, `nx-gs-kafka` или `nx-gs-commons`, держите их такими, какие
+объявлены в POM core. Несовместимая пара компилируется, но падает во время работы с `NoClassDefFoundError` в логе
+игрового сервера, и затронутые части адаптера перестают работать.
+:::
+
+## 2. Зарегистрируйте подключение к базе
+
+Адаптер берёт соединения из пула, который у сервера уже есть. Реализуйте `JdbcConnectionSource` с публичным
+конструктором без аргументов:
+
+```java title="GameDbConnectionSource.java"
+package com.example.l2nx;
+
+import app.l2nx.gs.adapter.api.spi.provider.JdbcConnectionSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public final class GameDbConnectionSource implements JdbcConnectionSource {
+
+    @Override
+    public String name() {
+        return "game-pool";
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        return GameDatabase.getInstance().getConnection(); // the server's existing pool
+    }
+}
+```
+
+и зарегистрируйте её для `ServiceLoader`:
+
+```text title="META-INF/services/app.l2nx.gs.adapter.api.spi.provider.JdbcConnectionSource"
+com.example.l2nx.GameDbConnectionSource
+```
+
+В classpath должна быть ровно одна реализация. Не делайте соединения принудительно read-only: адаптер сам выставляет
+нужный режим после каждого заимствования.
+
+## 3. Запустите адаптер при загрузке
+
+Вызовите `NxAdapter.start()`, когда пул базы уже поднят:
+
+```java title="GameServer.java"
+import app.l2nx.gs.adapter.core.NxAdapter;
+
+NxAdapter.onStateChange(state -> log.info("L2NX adapter state: {}", state));
+NxAdapter.hostExecutor(gameExecutor); // runs platform commands that must execute on the game side
+NxAdapter adapter = NxAdapter.start();
+```
+
+- `start()` возвращается сразу: вся работа идёт на daemon-потоках, и вызов никогда не бросает исключение в сервер.
+  О проблемах сообщают лог и состояние адаптера.
+- Зарегистрируйте host executor до `start()`; без него обработчик команды, которому нужна игровая сторона, падает.
+- При остановке JVM адаптер останавливается сам через shutdown hook. Сервер, который сам останавливает JVM, сначала
+  вызывает `adapter.shutdown()`, чтобы события из очереди были доставлены.
+- Если сервер читает таблицы `l2nx_*` адаптера при своей загрузке до `start()`, он сначала вызывает
+  `NxAdapter.migrateSchema()`.
+
+## 4. Получите ключ сервера
+
+Ключ сервера (`nx_sk_…`) и URL платформы вашего тенанта выдаются по запросу, см.
+[получение доступа](/ru/adapter/getting-access/).
+
+## 5. Создайте `l2nx.properties`
+
+```properties title="l2nx.properties"
+# Master switch: without true the adapter stays DISABLED
+l2nx.enabled=true
+l2nx.gs-key=nx_sk_...
+l2nx.platform-url=https://<tenant>.api.l2nx.app
+```
+
+Адаптер ищет конфигурацию в таком порядке, отдельно для каждого ключа:
+
+1. Файл из `-Dl2nx.config-file=<path>` (абсолютный путь или относительный от рабочей директории JVM). Если свойство
+   задано, а файл не читается, адаптер падает при старте, а не переходит молча к следующему источнику.
+2. `l2nx.properties` в рабочей директории JVM, если `-Dl2nx.config-file` не задан. Отсутствие файла — не ошибка.
+3. Системные свойства JVM `-Dl2nx.<key>=<value>` — только для ключей, которых нет в файле.
+
+Переменные окружения не поддерживаются. Все ключи и их значения по умолчанию — в разделе
+[конфигурация](/ru/adapter/configuration/).
+
+:::note
+Ключ сервера — секрет. Держите файл вне дистрибутива сервера, например
+`-Dl2nx.config-file=/etc/l2nx/adapter.properties`, и с правами на чтение только для учётной записи, под которой
+работает сервер.
+:::
+
+## 6. Запустите и проверьте подключение
+
+Запустите сервер как обычно:
+
+```sh
+java -Dl2nx.config-file=/etc/l2nx/adapter.properties -cp "<server classpath>" <server main class>
+```
+
+При старте адаптер выводит баннер с версией, затем сообщает о подключении:
+
+```text title="game server log"
+ _     ____  _   ___  __
+| |   |___ \| \ | \ \/ /
+| |     __) |  \| |\  /     L2NX game-server adapter — version 0.44.0
+| |___ / __/| |\  |/  \
+|_____|_____|_| \_/_/\_\
+
+Connect succeeded — platform handshake passed
+```
+
+После `Connect succeeded` адаптер в состоянии `ACTIVE` или `DEGRADED`, пока брокер Kafka недоступен. Другие строки и
+что с ними делать:
+
+| Строка лога                                                    | Состояние     | Что делать                                                                   |
+| -------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
+| `L2NX adapter is disabled (l2nx.enabled=false)`                | `DISABLED`    | Поставьте `l2nx.enabled=true`.                                               |
+| `Adapter failed to start due to config error: …`               | `FAILED`      | Исправьте ключ из сообщения и перезапустите сервер.                          |
+| `Adapter schema migration failed, adapter FAILED …`            | `FAILED`      | Проверьте мигратор, `liquibase-core` 5.x, Java 17+ и права пользователя БД.  |
+| `Connect IO failure: … — retrying with backoff`                | `REGISTERING` | Проверьте исходящий HTTPS к URL платформы. Повторы идут сами.                |
+| `Connect rejected with 401 — server-key invalid (terminal)`    | `FAILED`      | Проверьте `l2nx.gs-key`.                                                     |
+| `Connect rejected with 403 GAME_SERVER_DEACTIVATED (terminal)` | `REJECTED`    | Сервер деактивирован на платформе: напишите в поддержку.                     |
+| `Kafka init failed — adapter degraded: …`                      | `DEGRADED`    | Проверьте исходящий доступ к брокеру Kafka.                                  |
+
+Повторы после сетевой ошибки или ошибки на стороне платформы ждут 30 с, 1 мин, 2 мин, затем по 5 мин, с разбросом
+±25%. `FAILED`, `REJECTED` и `CLOSED` — конечные состояния: устраните причину и перезапустите сервер.
+
+Текущее состояние доступно и в коде — через `NxAdapter.state()` и callback `onStateChange`.

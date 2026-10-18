@@ -1,0 +1,51 @@
+---
+title: L2NX Dev Portal
+description: Документация для разработчиков платформы L2NX для проектов игровых серверов Lineage 2.
+template: splash
+hero:
+  title: Интеграция с L2NX
+  tagline: L2NX — платформа для проектов игровых серверов Lineage 2. Подключите игровой сервер, принимайте голоса на l2nx.top и свяжите свой сайт с API платформы.
+  actions:
+    - text: Подключить игровой сервер
+      link: /ru/adapter/overview/
+      icon: right-arrow
+      variant: primary
+    - text: Integration API
+      link: /ru/api/overview/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## С чего начать
+
+<CardGrid>
+  <LinkCard
+    title="Адаптер"
+    href="/ru/adapter/overview/"
+    description="Java-библиотека, которая подключает игровой сервер к L2NX: установка, настройка, модули и релизы."
+  />
+  <LinkCard
+    title="l2nx.top"
+    href="/ru/top/overview/"
+    description="Рейтинг серверов и голосование: ссылки для голосования, вебхук vote.created и лента голосов."
+  />
+  <LinkCard
+    title="Integration API"
+    href="/ru/api/overview/"
+    description="HTTP API для вашего сайта и инструментов: хосты, API keys, scopes, ошибки и rate limits."
+  />
+</CardGrid>
+
+## Нужен доступ?
+
+<CardGrid>
+  <Card title="Ключи и вебхуки" icon="seti:lock">
+    API keys, эндпоинты вебхуков и ключи игровых серверов выдаются по запросу. См. [Поддержка](/ru/support/).
+  </Card>
+  <Card title="Нашли ошибку?" icon="pencil">
+    На каждой странице есть ссылка на редактирование. Исправления и issues принимаются на
+    [GitHub](https://github.com/l2nx/nx-dev-web/issues).
+  </Card>
+</CardGrid>

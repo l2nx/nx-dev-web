@@ -1,0 +1,51 @@
+---
+title: L2NX Dev Portal
+description: Developer documentation for the L2NX platform for Lineage 2 game server projects.
+template: splash
+hero:
+  title: Build on L2NX
+  tagline: L2NX is a platform for Lineage 2 game server projects. Connect your game server, take votes on l2nx.top and integrate your site with the platform API.
+  actions:
+    - text: Connect a game server
+      link: /adapter/overview/
+      icon: right-arrow
+      variant: primary
+    - text: Integration API
+      link: /api/overview/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Start here
+
+<CardGrid>
+  <LinkCard
+    title="Adapter"
+    href="/adapter/overview/"
+    description="A Java library that connects your game server to L2NX: setup, configuration, modules and releases."
+  />
+  <LinkCard
+    title="l2nx.top"
+    href="/top/overview/"
+    description="Server rating and voting: vote links for your players, the vote.created webhook and the vote feed."
+  />
+  <LinkCard
+    title="Integration API"
+    href="/api/overview/"
+    description="HTTP API for your site and tools: hosts, API keys, scopes, errors and rate limits."
+  />
+</CardGrid>
+
+## Need access?
+
+<CardGrid>
+  <Card title="Keys and webhooks" icon="seti:lock">
+    API keys, webhook endpoints and game server keys are issued on request. See [Support](/support/).
+  </Card>
+  <Card title="Found an error?" icon="pencil">
+    Every page has an edit link. Fixes and issues are welcome on
+    [GitHub](https://github.com/l2nx/nx-dev-web/issues).
+  </Card>
+</CardGrid>

@@ -1,0 +1,199 @@
+---
+title: Quick start
+description: Add the adapter to a game server, configure l2nx.properties and check that the server connected to L2NX.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Steps 1–3 are for the host developer who builds the game server. If your build already ships the adapter, skip to
+[step 4](#4-get-a-server-key).
+
+## 1. Add the dependencies
+
+All modules are on Maven Central under the group `app.l2nx`. Each module has its own version: take the latest one
+from [Maven Central](https://central.sonatype.com/namespace/app.l2nx) or the [changelog](/adapter/changelog/) and
+put it in place of `X.Y.Z`.
+
+A game server needs the core, the schema migrator and Liquibase 5. Sync modules are added as needed (see
+[modules](/adapter/overview/#modules)).
+
+<Tabs syncKey="build">
+  <TabItem label="Gradle">
+
+```kotlin title="build.gradle.kts"
+dependencies {
+    implementation("app.l2nx:nx-gs-adapter-core:X.Y.Z")
+    runtimeOnly("app.l2nx:nx-gs-db-migrator-liquibase5:X.Y.Z")
+    runtimeOnly("org.liquibase:liquibase-core:5.0.4")
+
+    // Optional: only the sync modules the server uses
+    runtimeOnly("app.l2nx:nx-gs-db-sync-core:X.Y.Z")
+    runtimeOnly("app.l2nx:nx-gs-runtime-sync-core:X.Y.Z")
+    runtimeOnly("app.l2nx:nx-gs-gd-sync-core:X.Y.Z")
+}
+```
+
+  </TabItem>
+  <TabItem label="Maven">
+
+```xml title="pom.xml"
+<dependency>
+  <groupId>app.l2nx</groupId>
+  <artifactId>nx-gs-adapter-core</artifactId>
+  <version>X.Y.Z</version>
+</dependency>
+<dependency>
+  <groupId>app.l2nx</groupId>
+  <artifactId>nx-gs-db-migrator-liquibase5</artifactId>
+  <version>X.Y.Z</version>
+  <scope>runtime</scope>
+</dependency>
+<dependency>
+  <groupId>org.liquibase</groupId>
+  <artifactId>liquibase-core</artifactId>
+  <version>5.0.4</version>
+  <scope>runtime</scope>
+</dependency>
+
+<!-- Optional: only the sync modules the server uses -->
+<dependency>
+  <groupId>app.l2nx</groupId>
+  <artifactId>nx-gs-db-sync-core</artifactId>
+  <version>X.Y.Z</version>
+  <scope>runtime</scope>
+</dependency>
+```
+
+  </TabItem>
+</Tabs>
+
+`nx-gs-adapter-api`, `nx-gs-kafka` and `nx-gs-commons` come in transitively. Any Liquibase 5.x works; the adapter is
+tested against 5.0.4.
+
+:::caution
+If you pin `nx-gs-adapter-api`, `nx-gs-kafka` or `nx-gs-commons` explicitly, keep them at the versions the core's
+POM declares. A mismatched pair compiles but fails at run time with `NoClassDefFoundError` in the game server log,
+and the affected parts of the adapter stop working.
+:::
+
+## 2. Register the database connection
+
+The adapter borrows connections from the pool the server already has. Implement `JdbcConnectionSource` with a
+public no-argument constructor:
+
+```java title="GameDbConnectionSource.java"
+package com.example.l2nx;
+
+import app.l2nx.gs.adapter.api.spi.provider.JdbcConnectionSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public final class GameDbConnectionSource implements JdbcConnectionSource {
+
+    @Override
+    public String name() {
+        return "game-pool";
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        return GameDatabase.getInstance().getConnection(); // the server's existing pool
+    }
+}
+```
+
+and register it for `ServiceLoader`:
+
+```text title="META-INF/services/app.l2nx.gs.adapter.api.spi.provider.JdbcConnectionSource"
+com.example.l2nx.GameDbConnectionSource
+```
+
+Exactly one implementation must be on the classpath. Do not force connections to read-only: the adapter sets the
+mode it needs after each borrow.
+
+## 3. Start the adapter during boot
+
+Call `NxAdapter.start()` once the database pool is up:
+
+```java title="GameServer.java"
+import app.l2nx.gs.adapter.core.NxAdapter;
+
+NxAdapter.onStateChange(state -> log.info("L2NX adapter state: {}", state));
+NxAdapter.hostExecutor(gameExecutor); // runs platform commands that must execute on the game side
+NxAdapter adapter = NxAdapter.start();
+```
+
+- `start()` returns immediately: all work runs on daemon threads, and the call never throws into the server. Problems
+  are reported through the log and the adapter state.
+- Register the host executor before `start()`; without it, a command handler that needs the game side fails.
+- On JVM shutdown the adapter stops itself through a shutdown hook. A server that halts the JVM on its own calls
+  `adapter.shutdown()` first, so queued events are delivered.
+- If the server reads the adapter's `l2nx_*` tables during its own boot before `start()`, it calls
+  `NxAdapter.migrateSchema()` first.
+
+## 4. Get a server key
+
+The server key (`nx_sk_…`) and the platform URL of your tenant are issued on request, see
+[getting access](/adapter/getting-access/).
+
+## 5. Create `l2nx.properties`
+
+```properties title="l2nx.properties"
+# Master switch: without true the adapter stays DISABLED
+l2nx.enabled=true
+l2nx.gs-key=nx_sk_...
+l2nx.platform-url=https://<tenant>.api.l2nx.app
+```
+
+The adapter looks for the configuration in this order, key by key:
+
+1. The file given by `-Dl2nx.config-file=<path>` (absolute, or relative to the JVM working directory). If the
+   property is set but the file cannot be read, the adapter fails at start instead of silently falling back.
+2. `l2nx.properties` in the JVM working directory, when `-Dl2nx.config-file` is not set. A missing file is fine.
+3. JVM system properties `-Dl2nx.<key>=<value>`, only for keys the file does not set.
+
+Environment variables are not supported. All keys and their defaults are listed in
+[configuration](/adapter/configuration/).
+
+:::note
+The server key is a secret. Keep the file outside the server distribution, for example
+`-Dl2nx.config-file=/etc/l2nx/adapter.properties`, and readable only by the account that runs the server.
+:::
+
+## 6. Launch and check the connection
+
+Start the server as usual:
+
+```sh
+java -Dl2nx.config-file=/etc/l2nx/adapter.properties -cp "<server classpath>" <server main class>
+```
+
+On start the adapter prints its banner with the version, then reports the connection:
+
+```text title="game server log"
+ _     ____  _   ___  __
+| |   |___ \| \ | \ \/ /
+| |     __) |  \| |\  /     L2NX game-server adapter — version 0.44.0
+| |___ / __/| |\  |/  \
+|_____|_____|_| \_/_/\_\
+
+Connect succeeded — platform handshake passed
+```
+
+After `Connect succeeded` the adapter is `ACTIVE`, or `DEGRADED` until the Kafka broker is reachable. Other lines and
+what to do about them:
+
+| Log line                                                         | State         | What to do                                                                |
+| ---------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------- |
+| `L2NX adapter is disabled (l2nx.enabled=false)`                  | `DISABLED`    | Set `l2nx.enabled=true`.                                                  |
+| `Adapter failed to start due to config error: …`                 | `FAILED`      | Fix the key named in the message and restart.                             |
+| `Adapter schema migration failed, adapter FAILED …`              | `FAILED`      | Check the migrator, `liquibase-core` 5.x, Java 17+ and the DB user rights. |
+| `Connect IO failure: … — retrying with backoff`                  | `REGISTERING` | Check outbound HTTPS to the platform URL. Retries run on their own.       |
+| `Connect rejected with 401 — server-key invalid (terminal)`      | `FAILED`      | Check `l2nx.gs-key`.                                                      |
+| `Connect rejected with 403 GAME_SERVER_DEACTIVATED (terminal)`   | `REJECTED`    | The server is deactivated on the platform: contact support.               |
+| `Kafka init failed — adapter degraded: …`                        | `DEGRADED`    | Check outbound access to the Kafka broker.                                |
+
+Retries after a network error or a platform-side error wait 30 s, 1 min, 2 min, then 5 min each, with ±25% jitter.
+`FAILED`, `REJECTED` and `CLOSED` are terminal: fix the cause and restart the server.
+
+The current state is also available in code through `NxAdapter.state()` and the `onStateChange` callback.
