@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read
-  # @l2nx/ui comes from GitHub Packages; the package grants this repo read access, so no PAT is needed.
-  packages: read
 
 concurrency:
   group: deploy-${{ github.workflow }}
@@ -46,7 +44,7 @@ jobs:
           NPMRC_FILE=$(mktemp)
           cat > "$NPMRC_FILE" <<EOF
           @l2nx:registry=https://npm.pkg.github.com
-          //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+          //npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}
           EOF
           echo "path=$NPMRC_FILE" >> "$GITHUB_OUTPUT"
 
