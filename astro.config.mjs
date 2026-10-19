@@ -69,6 +69,10 @@ export default defineConfig({
           items: ['top/overview', 'top/vote-link', 'top/webhooks', 'top/getting-access'],
         },
         {
+          label: 'nx-l2',
+          items: ['l2/overview', 'l2/quick-start', 'l2/licensing'],
+        },
+        {
           label: 'Integration API',
           translations: { ru: 'Integration API' },
           items: ['api/overview', 'api/authentication', ...(openApiSchemas.length > 0 ? openAPISidebarGroups : [])],

@@ -19,6 +19,7 @@ source_dir=$(cd "$2" && pwd)
 case "$section" in
   adapter) excludes=(changelog.mdx) ;;
   top) excludes=() ;;
+  l2) excludes=() ;;
   *) die "unknown docs section: $section" ;;
 esac
 
