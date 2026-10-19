@@ -1,0 +1,245 @@
+{
+  "components": {
+    "schemas": {
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RedeemResponse": {
+        "properties": {
+          "deliveryStatus": {
+            "enum": [
+              "PENDING",
+              "SENT",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RewardItemDto"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "SUCCESS",
+              "INVALID_CODE",
+              "ALREADY_REDEEMED",
+              "GROUP_ALREADY_USED",
+              "CHARACTER_NOT_FOUND"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RewardItemDto": {
+        "properties": {
+          "count": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "itemTemplateId": {
+            "exclusiveMinimum": 0,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UserPanelRedeemRequest": {
+        "properties": {
+          "characterId": {
+            "exclusiveMinimum": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "code": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "serverId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "serverId"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "platformApiKey": {
+        "bearerFormat": "nx_api_…",
+        "description": "Tenant API key, sent as `Authorization: Bearer nx_api_...`. The key determines the tenant; the scopes granted to it determine which endpoints it may call.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Third-party integration surface of nx-gameservers. Authenticate every request with your tenant API key (issued by the platform operator on request): `Authorization: Bearer nx_api_...`; promo redeem needs scope `gameservers.promo:redeem`. The tenant is the one the API key belongs to; a key used on another tenant's host is rejected with 403 `API_KEY_TENANT_MISMATCH`. Do NOT send a `Tenant-Slug` header yourself.",
+    "title": "nx-gameservers — Integration API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/gameservers/v1/integration/promo/redeem": {
+      "post": {
+        "description": "Activates a promo code for the given character on behalf of the user panel.\nAuthenticate with your tenant API key as `Authorization: Bearer nx_api_...`.\nHTTP 200 is returned for any business outcome — read `outcome`\n(SUCCESS / INVALID_CODE / ALREADY_REDEEMED / GROUP_ALREADY_USED /\nCHARACTER_NOT_FOUND).\nHTTP 503 means no reward was delivered and the code was not spent — retry after\n`Retry-After` seconds.\n",
+        "operationId": "redeem",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPanelRedeemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedeemResponse"
+                }
+              }
+            },
+            "description": "Redeem processed; see `outcome`"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Missing / invalid API key"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Key rejected: `code` is API_KEY_REVOKED, API_KEY_EXPIRED, TENANT_DISABLED, API_KEY_TENANT_MISMATCH or INSUFFICIENT_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Game server offline or refused the reward mail before executing it (`code` = PROMO_REWARD_NOT_DELIVERED); nothing delivered, code not spent"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Redeem a code for a character (user panel)",
+        "tags": [
+          "Promo — integration"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "platformApiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Production gateway (per-tenant host)",
+      "url": "https://{tenant}.api.l2nx.app",
+      "variables": {
+        "tenant": {
+          "default": "your-tenant",
+          "description": "Tenant slug — your dedicated API host prefix"
+        }
+      }
+    }
+  ]
+}
