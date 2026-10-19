@@ -40,7 +40,7 @@ Every stage ends with a server that builds and a client that logs in and plays.
 
 ## Layout
 
-The target layout; stage 2 has `libs/commons`, `login/` and `chronicles/high-five/`.
+The target layout; stage 2 has `libs/boot`, `libs/network`, `login/` and `chronicles/high-five/`.
 
 ```
 libs/          infrastructure with no Lineage 2 knowledge

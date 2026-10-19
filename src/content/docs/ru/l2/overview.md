@@ -40,7 +40,7 @@ High Five перенесён из L2J Mobius со всей историей. О�
 
 ## Структура
 
-Целевая структура; на этапе 2 есть `libs/commons`, `login/` и `chronicles/high-five/`.
+Целевая структура; на этапе 2 есть `libs/boot`, `libs/network`, `login/` и `chronicles/high-five/`.
 
 ```
 libs/          инфраструктура без знаний о Lineage 2

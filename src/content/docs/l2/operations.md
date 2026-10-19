@@ -3,18 +3,18 @@ title: Operations
 description: Configure, monitor, containerize and restart the nx-l2 login and game servers.
 ---
 
-Both servers run on Spring Boot. This page covers what an operator sets and watches. The game and login settings
-themselves stay in the `.ini` files of `config/`.
+Both servers run on Spring Boot. This page covers what an operator sets and watches. The login settings are
+`l2nx.login.*` keys of `application.yaml`; the game settings stay in the `.ini` files of `config/`.
 
 ## Configuration
 
 | Where                     | What                                                                   |
 | ------------------------- | ---------------------------------------------------------------------- |
-| `config/*.ini`            | game and login settings, thread pool sizes, client ports               |
-| `config/application.yaml` | database, management port and address, logging, everything Spring Boot |
+| `config/*.ini`            | game settings, thread pool sizes, client ports (game server only)      |
+| `config/application.yaml` | database, management port and address, logging, `l2nx.login.*` (login) |
 | environment variables     | override the Spring Boot keys of the file and of the built-in defaults |
 
-`config/application.yaml` sits next to the `.ini` files in the distribution; Spring Boot reads it without extra flags and
+`config/application.yaml` sits in the distribution (next to the `.ini` files of the game server); Spring Boot reads it without extra flags and
 it overrides the built-in defaults. Environment variables win over the file: `SPRING_DATASOURCE_URL`,
 `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `SERVER_PORT`, `SERVER_ADDRESS`.
 
@@ -103,7 +103,7 @@ docker run -d --name game-server --stop-timeout 120 --restart on-failure \
   l2nx/game-server
 ```
 
-The client ports and the link between the servers are set in the `.ini` files, so a login and game pair cannot yet be
+The game server's client ports and its link to the login server are set in the `.ini` files, so a login and game pair cannot yet be
 configured in Compose; run them as distributions until then.
 
 ## Restart
