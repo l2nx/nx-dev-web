@@ -185,11 +185,13 @@ feeds the replication phase directly.
 ## Migration path
 
 The Mobius code is moved to this architecture in steps. Each step ships on its own, ends with a playable server and is
-accepted by a bot load test that includes a siege. Scripts keep calling the same facades at every step.
+accepted by a bot load test that includes a siege; until the bots exist, by its metrics and play with a real client.
+Scripts keep calling the same facades at every step.
 
 | #   | Step                                                                                          |
 | --- | --------------------------------------------------------------------------------------------- |
-| 1   | Metrics: pass time per partition and subsystem, queue depths                                  |
+| 0   | Bot load harness: headless clients with login, movement, PvE, PvP and siege scenarios         |
+| 1   | Metrics: a baseline of the current execution first, then pass time per partition and phase    |
 | 2   | Identity: UUIDv7 keys in the PostgreSQL schema, wire-handle allocator                         |
 | 3   | Value transactions, ledger, operation ids, outbox                                             |
 | 4   | Database access off game threads, write-behind                                                |
