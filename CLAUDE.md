@@ -15,6 +15,10 @@ maintainers know where it lives.
 - **Bot-owned paths:** `openapi/*.json` (pushed by each service release) and `src/content/releases/**` (pushed by the
   adapter release). Never edit them by hand: the next release overwrites the file. A wrong spec is fixed in the
   service code.
+- **Bot-owned docs sections:** `src/content/docs/{,ru/}adapter/**` (except `changelog.mdx`, maintained here) and
+  `src/content/docs/{,ru/}top/**` are mirrored from the source repos' `docs/public/{en,ru}/` on their release by
+  `scripts/sync-docs.sh` (denylist grep and a portal build before the push). `.docs-sources/<section>` holds the sha of
+  the last synced source; a source that is its ancestor (rollback, old module tag) is skipped. Never edit these pages here: fix them in the source repo.
 - `astro.config.mjs` lists `openapi/*.json` itself: a new service appears under `/api/<service>/` without a config
   change. The OpenAPI plugin and its sidebar groups are registered only when at least one spec exists.
 - Palette comes from `@l2nx/ui/theme.css` (private GitHub Packages); the accent is the logo turquoise, not the kit's.
