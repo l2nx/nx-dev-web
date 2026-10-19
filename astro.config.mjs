@@ -70,7 +70,14 @@ export default defineConfig({
         },
         {
           label: 'nx-l2',
-          items: ['l2/overview', 'l2/quick-start', 'l2/architecture', 'l2/engine-research', 'l2/licensing'],
+          items: [
+            'l2/overview',
+            'l2/quick-start',
+            'l2/operations',
+            'l2/architecture',
+            'l2/engine-research',
+            'l2/licensing',
+          ],
         },
         {
           label: 'Integration API',
