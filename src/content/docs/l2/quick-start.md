@@ -12,9 +12,9 @@ longer than the Windows path limit allows by default.
 docker compose up -d
 ```
 
-This starts MariaDB on `127.0.0.1:3306` and creates the database `l2jmobiush5` with the full schema on the first
-start. It matches the defaults in `config/Database.ini` of both servers: user `root` without a password. The port is
-open to your machine only; change the password in `Database.ini` before you expose the database anywhere else.
+This starts MariaDB on `127.0.0.1:3306` and creates the database `l2nx` with the full schema on the first start. It
+matches `config/Database.ini` of both servers: user `l2nx`, password `l2nx`. The port is open to your machine only;
+change the password before you expose the database anywhere else. The database moves to PostgreSQL at stage 3.
 
 ## Servers
 
@@ -42,11 +42,12 @@ builds two runnable directories:
 | `login/boot/build/install/login-server`               | `bin/login-server`, `bin/account-manager`, `bin/game-server-register`, `config/` |
 | `chronicles/high-five/boot/build/install/game-server` | `bin/game-server`, `config/`, `data/`                                            |
 
-`GameServer.sh` and `LoginServer.sh` in them run the server in a loop that restarts it after an in-game restart.
-`./gradlew distZip` packs the same directories into archives.
+The servers run headless. A restart from the game or by schedule exits with code 2, a crash with another non-zero
+code, a shutdown with 0: run the server under a supervisor that restarts it on a non-zero exit (systemd
+`Restart=on-failure`, Docker `restart: on-failure`). `./gradlew distZip` packs the same directories into archives.
 
-The build rewrites everything in these directories that comes from the sources, including `config/`. It keeps `log/`,
-`backup/` and `data/geodata/`.
+The build rewrites everything in these directories that comes from the sources, including `config/`. It keeps `log/` and
+`data/geodata/`.
 
 ## Geodata
 

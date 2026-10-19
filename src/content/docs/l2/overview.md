@@ -25,14 +25,15 @@ start from the build. See the [quick start](/l2/quick-start/).
 | Stage | What it brings                                                                 |
 | ----- | ------------------------------------------------------------------------------ |
 | 1     | High Five imported with history, Gradle build, local run                       |
-| 2     | Host shell: Spring Boot launcher, Liquibase schema, metrics, graceful shutdown |
-| 3     | Own Netty transport for every connection                                       |
-| 4     | L2NX built in: the latest adapter, commands and events                         |
-| 5     | Public test server                                                             |
-| 6     | Movement, pathfinding and line of sight behind one interface, navmesh option   |
-| 7     | Newer clients on High Five                                                     |
-| 8     | Essence, and the core both chronicles share                                    |
-| 9     | Interlude                                                                      |
+| 2     | Host shell: Spring Boot launcher, metrics, graceful shutdown                   |
+| 3     | PostgreSQL, schema managed by Liquibase                                        |
+| 4     | Own Netty transport for every connection                                       |
+| 5     | L2NX built in: the latest adapter, commands and events                         |
+| 6     | Public test server                                                             |
+| 7     | Movement, pathfinding and line of sight behind one interface, navmesh option   |
+| 8     | Newer clients on High Five                                                     |
+| 9     | Essence, and the core both chronicles share                                    |
+| 10    | Interlude                                                                      |
 
 Every stage ends with a server that builds and a client that logs in and plays.
 
