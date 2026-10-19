@@ -1,0 +1,422 @@
+{
+  "components": {
+    "schemas": {
+      "ItemTemplateBriefDto": {
+        "properties": {
+          "description": {
+            "$ref": "#/components/schemas/LocalizedText"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "iconPanel": {
+            "type": "string"
+          },
+          "iconPanelUrl": {
+            "type": "string"
+          },
+          "iconUrl": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "name": {
+            "$ref": "#/components/schemas/LocalizedText"
+          }
+        },
+        "type": "object"
+      },
+      "LocalizedText": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Locale code -> text map. Supported keys: `ru`, `en`, `uk`, `es`; any of them may be absent on a given row.",
+        "example": {
+          "en": "Adena",
+          "es": "Adena",
+          "ru": "Адена",
+          "uk": "Адена"
+        },
+        "type": "object"
+      },
+      "PageMetadata": {
+        "properties": {
+          "number": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PagedModelItemTemplateBriefDto": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/ItemTemplateBriefDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageMetadata"
+          }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "platformApiKey": {
+        "bearerFormat": "nx_api_…",
+        "description": "Tenant API key, sent as `Authorization: Bearer nx_api_...`. The key determines the tenant; the scopes granted to it determine which endpoints it may call.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Third-party integration surface of nx-gamedata. Authenticate every request with the tenant API key: `Authorization: Bearer nx_api_...` (scope `gamedata.item-templates:read`). The tenant is the one the key belongs to — do NOT send a `Tenant-Id` header yourself; DO send `Server-Id` (the game-server UUID) on every call. Wiki-hidden item templates are never returned.",
+    "title": "nx-gamedata — Integration API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/gamedata/v1/integration/item-templates": {
+      "get": {
+        "description": "Paginated catalog of visible item templates for the scoped server.\nAuthenticate with the tenant API key as `Authorization: Bearer nx_api_...`\nand send `Server-Id`; the tenant is the one the key belongs to.\nThe key needs the `gamedata.item-templates:read` scope.\n\n\n**Filters:**\n- `search` — Matches the numeric item id (exact, when the term parses as an int) or a case-insensitive substring of the localized name (ru/en/uk). From 1 character; blank is ignored.\n- `id` — Exact item-template id, repeatable. Max 200 per request.\n\n**Sort:** `id`; default `id,ASC`",
+        "operationId": "list",
+        "parameters": [
+          {
+            "description": "Matches the numeric item id (exact, when the term parses as an int) or a case-insensitive substring of the localized name (ru/en/uk). From 1 character; blank is ignored.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact item-template id, repeatable. Max 200 per request.",
+            "in": "query",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "items": {
+                "format": "int32",
+                "type": "integer"
+              },
+              "type": "array"
+            }
+          },
+          {
+            "description": "Zero-based page index (0..N)",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The size of the page to be returned",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          {
+            "description": "Game-server id (UUID) — scopes the data query.",
+            "in": "header",
+            "name": "Server-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedModelItemTemplateBriefDto"
+                }
+              }
+            },
+            "description": "Item-template page"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Missing scope headers, server id outside the tenant, or too many ids"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Missing / invalid API key"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Key revoked or expired (`API_KEY_REVOKED`, `API_KEY_EXPIRED`), tenant disabled or mismatched, or the key lacks the `gamedata.item-templates:read` scope (`INSUFFICIENT_SCOPE`)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Per-key rate limit exceeded; `Retry-After` says when to retry"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Item templates (brief)",
+        "tags": [
+          "Item templates (integration)"
+        ]
+      }
+    },
+    "/gamedata/v1/integration/item-templates/{id}": {
+      "get": {
+        "description": "Single visible item template. A wiki-hidden template answers 404, same as an unknown id.",
+        "operationId": "get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Game-server id (UUID) — scopes the data query.",
+            "in": "header",
+            "name": "Server-Id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemTemplateBriefDto"
+                }
+              }
+            },
+            "description": "Item template"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unknown or hidden template (`ITEM_TEMPLATE_NOT_FOUND`)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Per-key rate limit exceeded; `Retry-After` says when to retry"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Item template by id (brief)",
+        "tags": [
+          "Item templates (integration)"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "platformApiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Production gateway (per-tenant host)",
+      "url": "https://{tenant}.api.l2nx.app",
+      "variables": {
+        "tenant": {
+          "default": "your-tenant",
+          "description": "Tenant slug — your dedicated API host prefix"
+        }
+      }
+    }
+  ]
+}
