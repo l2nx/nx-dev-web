@@ -13,8 +13,9 @@ docker compose up -d
 ```
 
 This starts MariaDB on `127.0.0.1:3306` and creates the database `l2nx` with the full schema on the first start. It
-matches `config/Database.ini` of both servers: user `l2nx`, password `l2nx`. The port is open to your machine only;
-change the password before you expose the database anywhere else. The database moves to PostgreSQL at stage 3.
+matches the defaults of both servers (`spring.datasource.*`): user `l2nx`, password `l2nx`. The port is open to your
+machine only; change the password before you expose the database anywhere else, and set the same one for the servers in
+`config/application.yaml` (see [operations](/l2/operations/)). The database moves to PostgreSQL at stage 3.
 
 ## Servers
 
@@ -39,12 +40,12 @@ builds two runnable directories:
 
 | Directory                                             | Contents                                                                         |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `login/boot/build/install/login-server`               | `bin/login-server`, `bin/account-manager`, `bin/game-server-register`, `config/` |
+| `login/boot/build/install/login-server`               | `bin/login-server`, `config/`                                                    |
 | `chronicles/high-five/boot/build/install/game-server` | `bin/game-server`, `config/`, `data/`                                            |
 
 The servers run headless. A restart from the game or by schedule exits with code 2, a crash with another non-zero
 code, a shutdown with 0: run the server under a supervisor that restarts it on a non-zero exit (systemd
-`Restart=on-failure`, Docker `restart: on-failure`). `./gradlew distZip` packs the same directories into archives.
+`Restart=on-failure`, Docker `restart: on-failure`; examples in [operations](/l2/operations/#restart)). `./gradlew distZip` packs the same directories into archives.
 
 The build rewrites everything in these directories that comes from the sources, including `config/`. It keeps `log/` and
 `data/geodata/`.
