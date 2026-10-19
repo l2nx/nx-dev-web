@@ -1,0 +1,456 @@
+{
+  "components": {
+    "schemas": {
+      "IntegrationVote": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Vote id (UUIDv7); the feed cursor",
+            "format": "uuid",
+            "type": "string"
+          },
+          "ip": {
+            "description": "Voter IP; `null` once the vote is older than 90 days",
+            "type": "string"
+          },
+          "ref": {
+            "description": "Opaque `ref` from the vote link, returned as is",
+            "type": "string"
+          },
+          "serverSlug": {
+            "description": "Server the voter picked, if any",
+            "type": "string"
+          },
+          "tenantSlug": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "IntegrationVotesResponse": {
+        "properties": {
+          "votes": {
+            "items": {
+              "$ref": "#/components/schemas/IntegrationVote"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VoteCreatedWebhook": {
+        "description": "Standard Webhooks envelope of `vote.created`",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/VoteData",
+            "description": "The vote, in the same shape as the vote feed; `ip` is always set"
+          },
+          "timestamp": {
+            "description": "When the vote was recorded",
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "vote.created"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VoteData": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "serverSlug": {
+            "type": "string"
+          },
+          "tenantSlug": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VoteLookupRequest": {
+        "properties": {
+          "refs": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 0,
+              "pattern": "\\P{Cntrl}*",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "refs"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "platformApiKey": {
+        "bearerFormat": "nx_api_…",
+        "description": "Tenant API key, sent as `Authorization: Bearer nx_api_...`. The key determines the tenant; the scopes granted to it determine which endpoints it may call.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Votes cast for your project on l2nx.top, for granting in-game rewards: a vote feed by cursor, a lookup by the `ref` you put into the vote link, and the `vote.created` webhook.\n\nAuthenticate with a tenant API key sent as `Authorization: Bearer nx_api_...`; the key needs the scope `top.votes:read`. The tenant is the key's tenant: no request parameter selects it, and every response holds only that tenant's votes.",
+    "title": "nx-top — Integration API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/top/v1/integration/votes": {
+      "get": {
+        "description": "**🔑 Integration — API key**\n\nVotes in id order after the `after` cursor, from the oldest without it. An empty `votes` array is the end of the feed; poll again later with the id of the last vote seen. Votes of the last 10 seconds are held back so that no vote is ever skipped behind the cursor.\n\n**Filters:**\n- `after` — Id of the last vote already seen\n- `limit` — Page size, 1..500\n",
+        "operationId": "list",
+        "parameters": [
+          {
+            "description": "Id of the last vote already seen",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size, 1..500",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationVotesResponse"
+                }
+              }
+            },
+            "description": "Next votes"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "`VALIDATION_FAILED`: `limit` outside 1..500"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Vote feed",
+        "tags": [
+          "Integration: votes"
+        ]
+      }
+    },
+    "/top/v1/integration/votes/lookup": {
+      "post": {
+        "description": "**🔑 Integration — API key**\n\nEvery vote carrying one of the `refs`; a ref with no vote is simply absent.",
+        "operationId": "lookup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationVotesResponse"
+                }
+              }
+            },
+            "description": "Matching votes in id order"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "`VALIDATION_FAILED`: 1..500 refs of at most 128 characters"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Votes by ref",
+        "tags": [
+          "Integration: votes"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "platformApiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Production",
+      "url": "https://api.l2nx.top"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Votes of the API key's tenant, for reward reconciliation",
+      "name": "Integration: votes"
+    }
+  ],
+  "webhooks": {
+    "vote.created": {
+      "post": {
+        "description": "Sent to the tenant's webhook URL once per vote, shortly after the vote is recorded. Verify `webhook-signature` before trusting the body and deduplicate by `webhook-id`: delivery is at-least-once. Any non-2xx response, a redirect or no response within 10 seconds is retried with growing delays for about a day, then the delivery is abandoned; the vote feed remains the source for reconciliation.",
+        "parameters": [
+          {
+            "description": "Event id (UUIDv7), the same on every retry; not `data.id`",
+            "in": "header",
+            "name": "webhook-id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Send time of this attempt, epoch seconds; signed, so a stale value exposes a replay",
+            "in": "header",
+            "name": "webhook-timestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`v1,<base64 HMAC-SHA256>` of `{webhook-id}.{webhook-timestamp}.{body}` keyed with the tenant's webhook secret",
+            "in": "header",
+            "name": "webhook-signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteCreatedWebhook"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx acknowledges delivery"
+          }
+        },
+        "security": [],
+        "summary": "Vote recorded",
+        "tags": [
+          "Integration: webhooks"
+        ]
+      }
+    }
+  }
+}
