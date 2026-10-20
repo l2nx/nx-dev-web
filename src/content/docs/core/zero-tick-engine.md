@@ -109,6 +109,39 @@ flowchart TB
 - **Same-pass follow-ups.** Work triggered inside a pass (a triggered skill, a death caused by a damage tick) runs in
   the same pass, up to a depth limit, so a trigger chain cannot loop forever.
 
+### Zero-Tick, ticks and ECS
+
+Tick versus Zero-Tick is a scheduling model: it decides when work runs. ECS (entity-component-system) is a data and
+code model: it decides how state and logic are laid out. The two are orthogonal. In practice ECS engines such as
+Bevy, Unity DOTS and Flecs almost always run on a tick: every frame the schedule iterates all entities that carry the
+components a system needs.
+
+|                       | Classic L2J (ticks + pools)                      | ECS (Bevy-like)                                                      | Zero-Tick                                                                                       |
+| --------------------- | ------------------------------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| When work runs        | fixed-rate tasks and ticks                       | every frame                                                          | on input, a due deadline or a due periodic system                                               |
+| Work per wake-up      | all due tasks, even empty ones                   | all entities with the component, O(entities) per tick                | only what is affected, O(events)                                                                |
+| Threading             | shared pool plus `synchronized`: races and dupes | the scheduler runs systems in parallel by component access, no locks | one writer thread per partition, partitions in parallel                                         |
+| Order and determinism | up to the OS scheduler                           | deterministic with a fixed step                                      | one "now" per pass, `(deadline, sequence)` order, replay                                        |
+| Strong side           | simple and familiar                              | dense work every frame, cache-friendly iteration                     | sparse work: most objects idle, rare precise events such as buffs, cooldowns, respawns and hits |
+| Weak side             | races, idle tasks, no visibility                 | empty ticks, latency up to one step, every script rewritten          | dense per-frame work has to go to periodic systems                                              |
+
+**Why Lineage 2 fits Zero-Tick.** An MMO world is sparse: thousands of NPCs stand idle, and every player carries dozens
+of buffs and cooldowns, each ending at its own millisecond. An ECS tick checks them all every frame; Zero-Tick wakes
+exactly when one of them is due.
+
+**A hybrid, not anti-ECS.**
+
+- **Sparse things are event-driven:** effects, cooldowns, respawns and input run on the timer wheel and the inbox.
+- **Dense things are ECS-style periodic systems:** movement and visibility iterate their components at their own
+  cadence, inside the same pass and on the same writer thread.
+- **The data is ECS-style:** state lives in components owned by systems, with data-oriented storage where the profiler
+  points.
+- **Why not pure ECS:** there is no public precedent of a classic MMO server core on pure ECS, about 310 thousand lines
+  of scripts are written against object facades, and the measured gain needs data-oriented storage on a few hot paths
+  only. See the [architecture](/core/architecture/).
+
+In ECS and tick engines, doing work is the default. In Zero-Tick it is the exception an event triggers.
+
 ### Spaces
 
 ![The open world as one partition, each instance and olympiad match as its own partition, and global services such as clans, mail, auction and castles as single writers exchanging messages with them](./zero-tick-spaces.svg)
@@ -223,8 +256,23 @@ replays a session.
   next pass, and its result in the world's next pass after that. The order is deterministic, but it is not
   simultaneous.
 - **An overloaded pass slows its own partition.** A partition is one thread, so a heavy pass delays everything in it.
-  The pass budget (`pass-budget`), the per-phase metrics and the over-budget counter exist to see that and fix it by
-  profiling.
+  One thread per partition has a big margin: a pass with 100 000 live timers takes about 178 µs against a 50 ms
+  budget, and EVE Online runs one thread per solar system. If a siege needs more, these steps are taken in order and
+  only on measurements:
+  1. Move everything that does not change state off the world thread: the persistence executor, the flush on Netty
+     threads, replication and the client wire into a separate edge gateway process
+     ([#4](https://github.com/l2nx/nx-l2/issues/4)).
+  2. Parallel pure computation inside a phase: pathfinding, line of sight and visibility diffs on worker threads,
+     while writes stay on one thread ([#21](https://github.com/l2nx/nx-l2/issues/21)).
+  3. Time dilation, like EVE's TiDi: an over-budget partition slows its game time instead of falling out of sync
+     ([#20](https://github.com/l2nx/nx-l2/issues/20)).
+  4. As a last resort, regions of the open world, each with its own writer, as in Folia
+     ([#21](https://github.com/l2nx/nx-l2/issues/21)). Borders are where dupes were born in other projects and where
+     Lineage 2 concentrates load: sieges.
+
+  The signal is the per-phase pass time and the over-budget counter (`pass-budget`); the acceptance test is bot sieges
+  on the full stack. There are no real siege numbers yet: the world is still migrating.
+
 - **Open work:**
   - input ordered against due timers by arrival time ([#45](https://github.com/l2nx/nx-l2/issues/45));
   - replay recording in production ([#44](https://github.com/l2nx/nx-l2/issues/44));
