@@ -89,6 +89,7 @@ export default defineConfig({
           label: 'L2NX Core',
           items: [
             'core/overview',
+            'core/zero-tick-engine',
             'core/quick-start',
             'core/operations',
             'core/architecture',
