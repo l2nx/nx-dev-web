@@ -26,12 +26,19 @@ means exactly this.
 
 ## Servers
 
+Both servers need the same GS-link secret of at least 32 characters; export it in each terminal before starting:
+
+```sh
+export L2NX_GSLINK_SECRET=$(openssl rand -base64 32)   # first terminal; copy the value to the second
+```
+
 ```sh
 ./gradlew :login:boot:run
 ./gradlew :chronicles:high-five:boot:run
 ```
 
-The login server accepts clients on port `2106`. The game server registers on it and accepts clients on port `7777`.
+The login server accepts clients on port `2106`. The game server registers on it over the GS-link (port `9014`,
+[operations](/core/operations/#login-and-game-server-link)) and accepts clients on port `7777`.
 Accounts are created on the first login (`l2nx.login.auto-create-accounts` in the login `application.yaml`).
 
 High Five clients with protocol revisions 267, 268, 271 and 273 are accepted (`AllowedProtocolRevisions` in the game

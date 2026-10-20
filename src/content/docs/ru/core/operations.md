@@ -4,16 +4,16 @@ description: Настройка, мониторинг, контейнер и п�
 ---
 
 Оба сервера работают на Spring Boot. Страница описывает, что оператор настраивает и за чем следит. Настройки логина —
-ключи `l2nx.login.*` в `application.yaml`, его сетевые настройки — `l2nx.network.*`; настройки игры остаются в
-`.ini`-файлах `config/`.
+ключи `l2nx.login.*` в `application.yaml`, его сетевые настройки — `l2nx.network.*`, связь между серверами —
+`spring.grpc.*` и `l2nx.gslink.*`; настройки игры остаются в `.ini`-файлах `config/`.
 
 ## Конфигурация
 
-| Где                       | Что                                                                                         |
-| ------------------------- | ------------------------------------------------------------------------------------------- |
-| `config/*.ini`            | настройки игры, размеры пулов потоков, клиентские порты (только игра)                       |
-| `config/application.yaml` | база данных, management-порт и адрес, логирование, `l2nx.login.*`, `l2nx.network.*` (логин) |
-| переменные окружения      | переопределяют ключи Spring Boot из файла и из значений по умолчанию                        |
+| Где                       | Что                                                                                                                                     |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `config/*.ini`            | настройки игры, размеры пулов потоков, клиентские порты (только игра)                                                                   |
+| `config/application.yaml` | база данных, management-порт и адрес, логирование, `l2nx.login.*`, `l2nx.network.*` (логин), GS-link (`spring.grpc.*`, `l2nx.gslink.*`) |
+| переменные окружения      | переопределяют ключи Spring Boot из файла и из значений по умолчанию                                                                    |
 
 `config/application.yaml` лежит в дистрибутиве (рядом с `.ini`-файлами игрового сервера); Spring Boot читает его без дополнительных флагов,
 он переопределяет встроенные значения по умолчанию. Переменные окружения сильнее файла: `SPRING_DATASOURCE_URL`,
@@ -31,7 +31,7 @@ server:
 ```
 
 Пользователь и схема задаются для каждого сервера: `l2nx_login` и `login` у сервера логина, `l2nx_game` и `game` у
-игрового (`spring.datasource.username`, `l2nx.database.schema`). Пул содержит 5 соединений на сервере логина и 100 на
+игрового (`spring.datasource.username`, `l2nx.database.schema`). Пул содержит 5 соединений на сервере логина и 20 на
 игровом сервере (`spring.datasource.hikari.maximum-pool-size`). Пароль по умолчанию нужен только для локальной
 разработки: задайте свой, прежде чем база станет доступна откуда-то ещё.
 
@@ -53,6 +53,69 @@ server:
 
 После авторизации сессия логина больше не ограничена `read-timeout`: она остаётся открытой не дольше 5 минут в сумме,
 затем сервер её закрывает.
+
+## Связь сервера логина и игрового сервера
+
+Игровой сервер регистрируется на сервере логина через GS-link — gRPC stream на порту `9014` сервера логина. Обоим
+серверам нужен один и тот же secret длиной не менее 32 символов (256 бит), из печатных символов ASCII без пробелов;
+без него или с более коротким они не запускаются. Сгенерируйте его командой `openssl rand -base64 32` (44 символа) и
+передайте через переменную окружения:
+
+```sh
+export L2NX_GSLINK_SECRET=<сгенерированный secret>
+```
+
+Сервер логина слушает `127.0.0.1:9014` (`spring.grpc.server.address` и `.port`), игровой сервер подключается к
+`static://127.0.0.1:9014` (`spring.grpc.client.channel.login.target`), поэтому двум серверам на одном хосте больше
+ничего не нужно. Без TLS связь работает только на loopback. Любой другой адрес требует TLS, иначе сервер не
+запустится: secret передавался бы открытым текстом. TLS берётся из Spring Boot SSL bundle; игровой сервер проверяет
+сертификат сервера логина и имя хоста, к которому подключается, и не запускается с `bypass-certificate-validation`:
+
+```yaml
+# сервер логина, config/application.yaml
+spring:
+  ssl:
+    bundle:
+      pem:
+        gslink:
+          keystore:
+            certificate: file:config/gslink.crt
+            private-key: file:config/gslink.key
+  grpc:
+    server:
+      address: 0.0.0.0
+      ssl:
+        bundle: gslink
+```
+
+```yaml
+# игровой сервер, config/application.yaml
+spring:
+  ssl:
+    bundle:
+      pem:
+        gslink:
+          truststore:
+            certificate: file:config/gslink-ca.crt
+  grpc:
+    client:
+      channel:
+        login:
+          target: static://login.example.org:9014
+          ssl:
+            bundle: gslink
+```
+
+`gslink-ca.crt` — сертификат центра, подписавшего сертификат сервера логина, или сам этот сертификат, если он
+self-signed (как его создать, показано в разделе [Docker](#docker)).
+
+Обе стороны отправляют gRPC keepalive ping каждые 15 секунд и отключают сторону, которая не ответила ещё за 10
+(`spring.grpc.server.keepalive.*`, `spring.grpc.client.channel.login.keepalive.*`). Игровой сервер открывает новый
+stream через 1 секунду после обрыва, удваивая паузу до 30 секунд (`l2nx.gslink.reconnect-delay.initial` и `.max`).
+Игровой сервер, который регистрируется с hex id живого stream, получает отказ, пока тот stream не завершится;
+мёртвый stream закрывает keepalive примерно за 25 секунд. При остановке сервер логина
+завершает все stream и ждёт их до 15 секунд (`spring.grpc.server.shutdown.grace-period`). На порту сервера логина
+также работает стандартный gRPC health check, без secret.
 
 ## База данных
 
@@ -139,7 +202,7 @@ curl -s -X POST -H 'Content-Type: application/json' -d '{"configuredLevel":"DEBU
 
 Метрики — стандартные для Spring Boot (JVM, процесс, система, события лога, `hikaricp.*`, `tomcat.*`, `executor.*` для
 пулов потоков) с тегом `application`, плюс `l2nx.network.*` (соединения, байты, отброшенное, закрытия по причинам),
-`l2nx.players.online` и, на игровом сервере, метрики циклов `l2nx.engine.*` (время pass и фаз, pass сверх
+`grpc.server.*` / `grpc.client.*` для GS-link, `l2nx.players.online` и, на игровом сервере, метрики циклов `l2nx.engine.*` (время pass и фаз, pass сверх
 бюджета, глубина inbox, таймеры, сбои) и таймеры legacy-исполнения `l2nx.legacy.task` (время выполнения задачи
 пула потоков по классу), `l2nx.legacy.task.all` (histogram по всем задачам), `l2nx.legacy.task.lag` (задержка старта запланированных задач) и `l2nx.legacy.packet`
 (время выполнения клиентского пакета).
@@ -178,17 +241,54 @@ docker build -t l2nx/login-server login/boot
 - Геодата — volume: примонтируйте файлы в `/opt/game-server/data/geodata`.
 - Остановка сохраняет всех игроков онлайн и может занять время. Задайте контейнеру таймаут остановки заметно больше
   этого времени (`docker stop --time 120`, `stop_grace_period` в Compose); Docker по умолчанию даёт 10 секунд, этого мало.
+  Сервер логина ждёт завершения stream GS-link до 15 секунд, поэтому ему тоже нужен таймаут остановки больше.
+
+Loopback контейнера недоступен из другого контейнера, поэтому gRPC-сервер сервера логина слушает интерфейс
+контейнера (`0.0.0.0`) и, как для любого адреса кроме loopback, требует TLS: без SSL bundle сервер не запустится.
+Один раз, вне контейнеров, создайте self-signed сертификат с именем хоста, к которому подключается игровой сервер:
 
 ```sh
+openssl req -x509 -newkey rsa:3072 -nodes -days 825 \
+  -keyout gslink.key -out gslink.crt \
+  -subj "/CN=login-host" -addext "subjectAltName=DNS:login-host"
+```
+
+`CN` и subject alternative name должны совпадать с хостом в `SPRING_GRPC_CLIENT_CHANNEL_LOGIN_TARGET`, потому что
+игровой сервер проверяет имя хоста. Образ работает от непривилегированного пользователя, поэтому `gslink.key` должен
+быть доступен для чтения его uid (его выводит `docker run --rm --entrypoint id l2nx/login-server -u`). Примонтируйте
+`gslink.key` и `gslink.crt` только для чтения в контейнер сервера логина и один `gslink.crt` в контейнер игрового
+сервера (self-signed сертификат сам себе trust anchor). Оба контейнера получают один и тот же `L2NX_GSLINK_SECRET`,
+а SSL bundle задаётся свойствами из [раздела о связи](#связь-сервера-логина-и-игрового-сервера) через переменные
+окружения:
+
+```sh
+docker run -d --name login-server --stop-timeout 30 --restart on-failure \
+  -e SPRING_DATASOURCE_URL='jdbc:postgresql://db-host:5432/l2nx' \
+  -e SPRING_DATASOURCE_USERNAME=l2nx_login -e SPRING_DATASOURCE_PASSWORD=change-me \
+  -e L2NX_GSLINK_SECRET="$L2NX_GSLINK_SECRET" \
+  -e SPRING_GRPC_SERVER_ADDRESS=0.0.0.0 \
+  -e SPRING_GRPC_SERVER_SSL_BUNDLE=gslink \
+  -e SPRING_SSL_BUNDLE_PEM_GSLINK_KEYSTORE_CERTIFICATE=file:/opt/login-server/tls/gslink.crt \
+  -e SPRING_SSL_BUNDLE_PEM_GSLINK_KEYSTORE_PRIVATEKEY=file:/opt/login-server/tls/gslink.key \
+  -v "$PWD/gslink.crt:/opt/login-server/tls/gslink.crt:ro" \
+  -v "$PWD/gslink.key:/opt/login-server/tls/gslink.key:ro" \
+  -p 2106:2106 -p 9014:9014 \
+  l2nx/login-server
+
 docker run -d --name game-server --stop-timeout 120 --restart on-failure \
   -e SPRING_DATASOURCE_URL='jdbc:postgresql://db-host:5432/l2nx' \
   -e SPRING_DATASOURCE_USERNAME=l2nx_game -e SPRING_DATASOURCE_PASSWORD=change-me \
+  -e L2NX_GSLINK_SECRET="$L2NX_GSLINK_SECRET" \
+  -e SPRING_GRPC_CLIENT_CHANNEL_LOGIN_TARGET=static://login-host:9014 \
+  -e SPRING_GRPC_CLIENT_CHANNEL_LOGIN_SSL_BUNDLE=gslink \
+  -e SPRING_SSL_BUNDLE_PEM_GSLINK_TRUSTSTORE_CERTIFICATE=file:/opt/game-server/tls/gslink.crt \
+  -v "$PWD/gslink.crt:/opt/game-server/tls/gslink.crt:ro" \
   -v "$PWD/geodata:/opt/game-server/data/geodata" -p 7777:7777 \
   l2nx/game-server
 ```
 
-Клиентские порты игрового сервера и его связь с логином задаются в `.ini`-файлах, поэтому пару логина и игры в Compose пока настроить
-нельзя; запускайте их как дистрибутивы.
+Клиентские порты игрового сервера по-прежнему задаются в `.ini`-файлах, поэтому пару логина и игры в Compose пока
+настроить нельзя; запускайте их как дистрибутивы.
 
 ## Перезапуск
 
@@ -208,6 +308,7 @@ systemd:
 ```ini
 [Service]
 WorkingDirectory=/opt/game-server
+EnvironmentFile=/opt/game-server/gslink.env
 ExecStart=/opt/game-server/bin/game-server
 Restart=on-failure
 RestartForceExitStatus=2
@@ -216,4 +317,6 @@ TimeoutStopSec=120
 ```
 
 `SuccessExitStatus=143` делает `systemctl stop` штатной остановкой; `RestartForceExitStatus=2` перезапускает по
-запрошенному рестарту независимо от остальных настроек.
+запрошенному рестарту независимо от остальных настроек. `gslink.env` содержит `L2NX_GSLINK_SECRET=…` и может быть
+доступен для чтения только root, потому что systemd читает его до запуска сервера; юнит сервера логина подключает тот
+же файл.
