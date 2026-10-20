@@ -165,7 +165,14 @@ reaches its turn.
 
 The result is that `nextDeadline()` is always exact. An idle partition holding thousands of timers minutes ahead
 (respawns, despawns, long buffs) runs no pass until the first of them is due. Cancelling a timer costs nothing on the
-wheel: a stale entry is ignored when it fires.
+wheel: a stale entry is ignored when it fires, and it does not use up the overdue cap below.
+
+The wheel does not order timers inside one tick, so a pass sorts the due timers by due time, then deadline, then
+registration order. Timers that are overdue (their deadline is older than `pass-min` before the pass) run up to
+`overdue-per-pass` per wheel and pass; the rest keeps its order for the next pass. A timer scheduled at or before the
+last run keeps its deadline but becomes due 1 ms after that run, behind everything already due, so a handler that
+re-arms itself at an overdue deadline cannot starve later timers under the cap. If the wall clock is set back, no
+deadline fires early.
 
 ### Input signal
 

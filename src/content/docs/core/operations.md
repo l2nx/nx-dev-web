@@ -100,14 +100,14 @@ and the same for `login`. PostgreSQL warns about a collation version mismatch in
 The game server runs the world on partition loops. The `l2nx.engine.*` keys of `application.yaml` tune them; the
 defaults are starting points to be tuned under load.
 
-| Key                               | Default | Meaning                                                                        |
-| --------------------------------- | ------- | ------------------------------------------------------------------------------ |
-| `l2nx.engine.pass-min`            | `5ms`   | minimum gap between passes run for input; due timers and systems never wait    |
-| `l2nx.engine.pass-budget`         | `50ms`  | a longer pass is counted and logged with its phase breakdown                   |
-| `l2nx.engine.trigger-depth`       | `8`     | generations of same-pass follow-up work drained in one pass                    |
-| `l2nx.engine.packets-per-pass`    | `16`    | items one ready input source gives per pass                                    |
-| `l2nx.engine.overdue-per-pass`    | `4096`  | timers one wheel runs per pass; the rest waits for the next pass               |
-| `l2nx.engine.owed-ticks-per-pass` | `10`    | ticks one late periodic task catches up per pass                               |
+| Key                               | Default | Meaning                                                                     |
+| --------------------------------- | ------- | --------------------------------------------------------------------------- |
+| `l2nx.engine.pass-min`            | `5ms`   | minimum gap between passes run for input; due timers and systems never wait |
+| `l2nx.engine.pass-budget`         | `50ms`  | a longer pass is counted and logged with its phase breakdown                |
+| `l2nx.engine.trigger-depth`       | `8`     | generations of same-pass follow-up work drained in one pass                 |
+| `l2nx.engine.packets-per-pass`    | `16`    | items one ready input source gives per pass                                 |
+| `l2nx.engine.overdue-per-pass`    | `4096`  | overdue timers one wheel fires per pass; the rest waits for the next pass   |
+| `l2nx.engine.owed-ticks-per-pass` | `10`    | ticks one late periodic task catches up per pass                            |
 
 Durations are whole milliseconds, at least `1ms`; counts are positive. A wrong value stops the server at startup.
 Stopping the loops is bounded by the standard `spring.lifecycle.timeout-per-shutdown-phase` (30 seconds by default).
@@ -138,7 +138,9 @@ curl -s -X POST -H 'Content-Type: application/json' -d '{"configuredLevel":"DEBU
 Metrics are the standard Spring Boot ones (JVM, process, system, log events, `hikaricp.*`, `tomcat.*`, `executor.*`
 for the thread pools), tagged with `application`, plus `l2nx.network.*` (connections, bytes, drops, closes by reason),
 `l2nx.players.online` and, on the game server, the `l2nx.engine.*` loop metrics (pass time and phases, passes over
-budget, inbox depth, timers, failures).
+budget, inbox depth, timers, failures) and the legacy execution timers `l2nx.legacy.task` (run time per thread pool
+task class), `l2nx.legacy.task.all` (histogram across all tasks), `l2nx.legacy.task.lag` (start delay of scheduled tasks) and `l2nx.legacy.packet` (run time per client
+packet).
 
 ## Logs
 
