@@ -312,7 +312,7 @@ tick as lagging and warns that averages hide 300 ms spikes
 
 ## What nx-l2 takes from this
 
-The [architecture](/l2/architecture/) page describes the result. In short:
+The [architecture](/core/architecture/) page describes the result. In short:
 
 - **One writer per partition, partitions behind hard seams.** The open world is one partition; each instance and
   olympiad match is another. The contiguous world is not split into regions, because that is where Lineage 2 crowds

@@ -16,8 +16,8 @@ This starts PostgreSQL 18 on `127.0.0.1:5432` with the database `l2nx`, and on t
 one schema per server: `l2nx_login` owns `login`, `l2nx_game` owns `game`. The servers create their tables
 themselves at start (Liquibase). This matches the defaults of both servers (`spring.datasource.*`): password `l2nx`.
 The port is open to your machine only; change the passwords before you expose the database anywhere else, and set the
-same ones for the servers in `config/application.yaml` (see [operations](/l2/operations/)). To set up a database
-without Compose, see [the database section of operations](/l2/operations/#database).
+same ones for the servers in `config/application.yaml` (see [operations](/core/operations/)). To set up a database
+without Compose, see [the database section of operations](/core/operations/#database).
 
 The roles and schemas are created only when the volume is created. Before 1.0 each server has a single schema
 baseline that is edited in place, so after you pull a change that touches the database, recreate it with
@@ -52,7 +52,7 @@ builds two runnable directories:
 
 The servers run headless. A restart from the game or by schedule exits with code 2, a crash with another non-zero
 code, a shutdown with 0: run the server under a supervisor that restarts it on a non-zero exit (systemd
-`Restart=on-failure`, Docker `restart: on-failure`; examples in [operations](/l2/operations/#restart)). `./gradlew distZip` packs the same directories into archives.
+`Restart=on-failure`, Docker `restart: on-failure`; examples in [operations](/core/operations/#restart)). `./gradlew distZip` packs the same directories into archives.
 
 The build rewrites everything in these directories that comes from the sources, including `config/`. It keeps `log/` and
 `data/geodata/`.

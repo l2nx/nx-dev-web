@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
+import mermaid from 'astro-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
@@ -18,10 +19,26 @@ const openApiSchemas = readdirSync(openApiDir)
     return { base: `api/${service}`, schema: `./openapi/${file}`, sidebar: { label: info?.title ?? service } };
   });
 
+// The section was published as /l2/ before it became L2NX Core; a dynamic redirect cannot target Starlight's
+// catch-all route, so each page gets its own.
+const coreDir = fileURLToPath(new URL('./src/content/docs/core/', import.meta.url));
+const legacyCoreRedirects = Object.fromEntries(
+  readdirSync(coreDir)
+    .filter((file) => /\.mdx?$/.test(file))
+    .map((file) => file.replace(/\.mdx?$/, ''))
+    .flatMap((page) => [
+      [`/l2/${page}/`, `/core/${page}/`],
+      [`/ru/l2/${page}/`, `/ru/core/${page}/`],
+    ]),
+);
+
 export default defineConfig({
   site: SITE,
   trailingSlash: 'always',
+  redirects: legacyCoreRedirects,
   integrations: [
+    // Must precede Starlight: it rewrites mermaid code blocks before Starlight renders them.
+    mermaid({ autoTheme: true }),
     starlight({
       title: 'L2NX Dev Portal',
       description: 'Developer documentation for the L2NX platform: game server adapter, l2nx.top, integration API.',
@@ -69,14 +86,14 @@ export default defineConfig({
           items: ['top/overview', 'top/vote-link', 'top/webhooks', 'top/getting-access'],
         },
         {
-          label: 'nx-l2',
+          label: 'L2NX Core',
           items: [
-            'l2/overview',
-            'l2/quick-start',
-            'l2/operations',
-            'l2/architecture',
-            'l2/engine-research',
-            'l2/licensing',
+            'core/overview',
+            'core/quick-start',
+            'core/operations',
+            'core/architecture',
+            'core/engine-research',
+            'core/licensing',
           ],
         },
         {

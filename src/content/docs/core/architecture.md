@@ -10,7 +10,7 @@ threading model; the [migration path](#migration-path) below shows how it change
 
 The decisions were taken in [issue #18](https://github.com/l2nx/nx-l2/issues/18). The research behind them, covering
 tick models, mature MMO server cores, ECS, spatial scaling and persistence, is on the
-[engine research](/l2/engine-research/) page.
+[engine research](/core/engine-research/) page.
 
 ## Principles
 
@@ -184,7 +184,7 @@ feeds the replication phase directly.
 - **Chronicle code is cut by feature,** not by technical layer: `combat`, `skill`, `effect`, `item`, `trade`, `clan`,
   `siege`, `olympiad` and so on. A slice owns its components and systems, its data, its commands and view events, its tables and its
   settings. Catch-all packages such as `managers` and `util` dissolve into slices. Slice boundaries are verified by a
-  test. See the [overview](/l2/overview/) for the repository layout.
+  test. See the [overview](/core/overview/) for the repository layout.
 
 ## Migration path
 

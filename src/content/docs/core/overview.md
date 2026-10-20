@@ -21,8 +21,8 @@ Like Mobius, nx-l2 is a reference implementation for education and research.
 
 High Five is imported from L2J Mobius with its full history. Both servers run on Spring Boot (stage 2): metrics, health
 checks, graceful shutdown and a Docker image. They store data in PostgreSQL, one schema per server, with the schema
-managed by Liquibase (stage 3). See the [quick start](/l2/quick-start/) and
-[operations](/l2/operations/).
+managed by Liquibase (stage 3). See the [quick start](/core/quick-start/) and
+[operations](/core/operations/).
 
 | Stage | What it brings                                                               |
 | ----- | ---------------------------------------------------------------------------- |
@@ -58,4 +58,4 @@ handlers are a compiled module of their own, `scripts`, built against the chroni
 ## What the repository does not contain
 
 No game client, no client assets, no geodata and no decompiled or leaked code. Operators prepare data from their own
-client. See [licensing](/l2/licensing/) for where the code comes from.
+client. See [licensing](/core/licensing/) for where the code comes from.

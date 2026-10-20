@@ -18,4 +18,7 @@
   --sl-color-accent-low: oklch(0.3 0.06 195);
   --sl-color-accent: oklch(0.8 0.14 195);
   --sl-color-accent-high: oklch(0.91 0.12 192);
+
+  /* Starlight's 45rem leaves comparison tables and diagrams cramped on desktop; narrow screens still shrink it. */
+  --sl-content-width: 60rem;
 }
