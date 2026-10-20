@@ -38,7 +38,31 @@ export default defineConfig({
   redirects: legacyCoreRedirects,
   integrations: [
     // Must precede Starlight: it rewrites mermaid code blocks before Starlight renders them.
-    mermaid({ autoTheme: true }),
+    // The portal is dark only: a fixed base theme in the @l2nx/ui palette instead of mermaid's grey dark theme.
+    mermaid({
+      theme: 'base',
+      autoTheme: false,
+      mermaidConfig: {
+        fontFamily: '"Onest Variable", ui-sans-serif, system-ui, sans-serif',
+        themeVariables: {
+          darkMode: true,
+          fontSize: '16px',
+          background: '#191d25',
+          primaryColor: '#1f2329',
+          primaryBorderColor: '#00d9d9',
+          primaryTextColor: '#f0f1f4',
+          secondaryColor: '#1f2329',
+          tertiaryColor: '#191d25',
+          lineColor: '#9a9fa6',
+          textColor: '#f0f1f4',
+          clusterBkg: '#14171d',
+          clusterBorder: '#3a3f48',
+          edgeLabelBackground: '#191d25',
+          titleColor: '#c0c4cd',
+          nodeTextColor: '#f0f1f4',
+        },
+      },
+    }),
     starlight({
       title: 'L2NX Dev Portal',
       description: 'Developer documentation for the L2NX platform: game server adapter, l2nx.top, integration API.',
