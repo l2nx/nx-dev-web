@@ -185,9 +185,50 @@ feeds the replication phase directly.
   partitions, identity, sessions, replication and persistence. Game mechanics shared by chronicles move into `engine/`
   only when a second chronicle proves them identical.
 - **Chronicle code is cut by feature,** not by technical layer: `combat`, `skill`, `effect`, `item`, `trade`, `clan`,
-  `siege`, `olympiad` and so on. A slice owns its components and systems, its data, its commands and view events, its tables and its
-  settings. Catch-all packages such as `managers` and `util` dissolve into slices. Slice boundaries are verified by a
-  test. See the [overview](/core/overview/) for the repository layout.
+  `siege`, `olympiad` and so on. A slice owns its components and systems, its data, its commands and view events, its
+  repositories, tables and settings. Catch-all packages such as `managers` and `util` dissolve into slices. See the
+  [overview](/core/overview/) for the repository layout.
+
+### Inside a slice
+
+Every slice is a [Spring Modulith](https://spring.io/projects/spring-modulith) module with the same fixed layout. Its
+root package is its API; the rest is internal unless marked as a named interface.
+
+```
+<slice>
+  (root)       API: the facade, outbound ports, value types carried by commands and view events
+  command/     commands and their handlers                       open to protocol adapters
+  view/        view events and the read-only views mappers read   open to protocol adapters
+  event/       domain events for systems and scripts             open to other slices
+  system/      systems                                           internal
+  model/       components and internal state                     internal
+  template/    static data: templates, loader, registry          internal
+  repository/  database access                                   internal
+```
+
+- **A protocol adapter reads only `view/`.** Components are mutable and owned by their system; the adapter sees view
+  events and read-only views, so serializing a packet can never change game state.
+- **Another slice is used only through its root API.**
+
+### Ports
+
+Ports exist only where the game meets a network or another process:
+
+| Edge         | Into the game       | Out of the game         | Adapter                      |
+| ------------ | ------------------- | ----------------------- | ---------------------------- |
+| game client  | command and handler | view event, client port | client protocol (`highfive`) |
+| login server | command and handler | login port              | the login link               |
+| database     | —                   | repository              | the repository itself        |
+
+Everything that enters the game is a command, whoever sends it, and has exactly one handler. An outbound port is an
+interface named `<Edge>Port`. A repository is a plain class: there is one database and one implementation.
+
+### Checked on every build
+
+A test runs Spring Modulith's verification over the migrated slices (no cycles, no access to another slice's
+internals) and ArchUnit rules for the layout: the fixed package names, where commands, handlers and events may live,
+ports as interfaces only, no slice depending on the network layer. Rules the imported code still breaks are frozen:
+the build fails on any new violation, and the list of old ones only shrinks.
 
 ## Migration path
 
