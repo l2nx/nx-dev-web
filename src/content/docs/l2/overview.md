@@ -20,7 +20,8 @@ Like Mobius, nx-l2 is a reference implementation for education and research.
 ## Status
 
 High Five is imported from L2J Mobius with its full history. Both servers run on Spring Boot (stage 2): metrics, health
-checks, graceful shutdown and a Docker image. See the [quick start](/l2/quick-start/) and
+checks, graceful shutdown and a Docker image. They store data in PostgreSQL, one schema per server, with the schema
+managed by Liquibase (stage 3). See the [quick start](/l2/quick-start/) and
 [operations](/l2/operations/).
 
 | Stage | What it brings                                                               |
@@ -40,8 +41,8 @@ Every stage ends with a server that builds and a client that logs in and plays.
 
 ## Layout
 
-The target layout; the repository has `libs/boot`, `libs/network`, `engine/core` (so far only the game clock),
-`login/` and `chronicles/high-five/`.
+The target layout; the repository has `libs/boot`, `libs/database`, `libs/network`, `engine/core`, `login/` and
+`chronicles/high-five/`.
 
 ```
 libs/          infrastructure with no Lineage 2 knowledge

@@ -23,16 +23,58 @@ description: Настройка, мониторинг, контейнер и п�
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/l2nx?allowPublicKeyRetrieval=true&useSSL=false
-    username: l2nx
+    url: jdbc:postgresql://localhost:5432/l2nx
     password: l2nx
 server:
   address: 127.0.0.1
 ```
 
-Пул содержит 5 соединений на сервере логина и 100 на игровом сервере
-(`spring.datasource.hikari.maximum-pool-size`). Пароль по умолчанию нужен только для локальной разработки: задайте
-свой, прежде чем база станет доступна откуда-то ещё.
+Пользователь и схема задаются для каждого сервера: `l2nx_login` и `login` у сервера логина, `l2nx_game` и `game` у
+игрового (`spring.datasource.username`, `l2nx.database.schema`). Пул содержит 5 соединений на сервере логина и 100 на
+игровом сервере (`spring.datasource.hikari.maximum-pool-size`). Пароль по умолчанию нужен только для локальной
+разработки: задайте свой, прежде чем база станет доступна откуда-то ещё.
+
+## База данных
+
+Серверам нужен PostgreSQL 18 или новее. Каждый серверный процесс владеет одной схемой в общей базе и ролью, которая
+владеет только этой схемой. Роли и схемы создаёте вы сами, как администратор базы данных; сервер их не создаёт. Если
+схемы нет, сервер останавливается при старте и называет схему и роль, которые нужно создать.
+
+```sql
+CREATE ROLE l2nx_login LOGIN PASSWORD 'change-me';
+CREATE SCHEMA login AUTHORIZATION l2nx_login;
+
+CREATE ROLE l2nx_game LOGIN PASSWORD 'change-me';
+CREATE SCHEMA game AUTHORIZATION l2nx_game;
+```
+
+Таблицы серверы создают при старте через Liquibase внутри своей схемы; вручную выполнять SQL не нужно. Между схемами
+нет ни чтения, ни внешних ключей, поэтому сервер логина можно вынести в отдельную базу или на другой хост, изменив его
+`spring.datasource.url`.
+
+Одну базу могут делить несколько игровых серверов. Дайте каждому свою схему и роль (`game_1` и `l2nx_game_1`, `game_2`
+и `l2nx_game_2`, ...) и задайте схему этого сервера через `l2nx.database.schema` (переменная окружения
+`L2NX_DATABASE_SCHEMA`) вместе с `spring.datasource.username`. Имя схемы соответствует `[a-z_][a-z0-9_]{0,62}`. Имена
+персонажей и кланов уникальны в пределах игровой схемы; игровые серверы с общей базой имён не делят.
+
+Логины аккаунтов, имена персонажей и кланов сравниваются без учёта регистра через ICU-сортировку, которую каждая схема
+создаёт для себя.
+
+**Обновление серверов.** До версии 1.0 у каждого сервера одна базовая схема, и её правят на месте, поэтому переход
+между версиями до 1.0 означает создание базы заново; об этом сказано в заметках к релизу. Ошибка контрольной суммы
+Liquibase при старте означает именно это. Начиная с 1.0 изменения приходят новыми миграциями, которые выполняются при
+старте и идут только вперёд: перед обновлением сделайте резервную копию базы, откат версии не поддерживается.
+
+**Обновление PostgreSQL или библиотеки ICU.** Новая версия ICU может упорядочивать значения иначе, и уникальный индекс,
+построенный по старому порядку, перестаёт быть верным. После такого обновления выполните для каждой схемы от имени её
+владельца:
+
+```sql
+REINDEX SCHEMA game;
+ALTER COLLATION game.case_insensitive REFRESH VERSION;
+```
+
+и то же для `login`. Пока этого не сделано, PostgreSQL предупреждает в логе о несовпадении версии сортировки.
 
 ## Состояние и метрики
 
@@ -97,8 +139,8 @@ docker build -t l2nx/login-server login/boot
 
 ```sh
 docker run -d --name game-server --stop-timeout 120 --restart on-failure \
-  -e SPRING_DATASOURCE_URL='jdbc:mysql://db-host:3306/l2nx?allowPublicKeyRetrieval=true&useSSL=false' \
-  -e SPRING_DATASOURCE_USERNAME=l2nx -e SPRING_DATASOURCE_PASSWORD=change-me \
+  -e SPRING_DATASOURCE_URL='jdbc:postgresql://db-host:5432/l2nx' \
+  -e SPRING_DATASOURCE_USERNAME=l2nx_game -e SPRING_DATASOURCE_PASSWORD=change-me \
   -v "$PWD/geodata:/opt/game-server/data/geodata" -p 7777:7777 \
   l2nx/game-server
 ```

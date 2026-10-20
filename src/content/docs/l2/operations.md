@@ -23,16 +23,57 @@ The shared defaults of both servers:
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/l2nx?allowPublicKeyRetrieval=true&useSSL=false
-    username: l2nx
+    url: jdbc:postgresql://localhost:5432/l2nx
     password: l2nx
 server:
   address: 127.0.0.1
 ```
 
-The pool holds 5 connections on the login server and 100 on the game server
-(`spring.datasource.hikari.maximum-pool-size`). The default password is for local development only: set your own
-before the database is reachable from anywhere else.
+The user and the schema are set per server: `l2nx_login` and `login` for the login server, `l2nx_game` and `game` for
+the game server (`spring.datasource.username`, `l2nx.database.schema`). The pool holds 5 connections on the login
+server and 100 on the game server (`spring.datasource.hikari.maximum-pool-size`). The default password is for local
+development only: set your own before the database is reachable from anywhere else.
+
+## Database
+
+The servers need PostgreSQL 18 or newer. Every server process owns one schema in a shared database, and a role that
+owns only that schema. Create the roles and schemas yourself, as a database administrator; a server never creates
+them. If the schema is missing, the server stops at start and names the schema and the role to create.
+
+```sql
+CREATE ROLE l2nx_login LOGIN PASSWORD 'change-me';
+CREATE SCHEMA login AUTHORIZATION l2nx_login;
+
+CREATE ROLE l2nx_game LOGIN PASSWORD 'change-me';
+CREATE SCHEMA game AUTHORIZATION l2nx_game;
+```
+
+The servers create their tables at start with Liquibase, inside their own schema; there is no SQL to run by hand.
+Nothing reads across schemas and there are no foreign keys between them, so the login server can move to its own
+database or host by changing its `spring.datasource.url`.
+
+Several game servers can share one database. Give each its own schema and role (`game_1` and `l2nx_game_1`, `game_2`
+and `l2nx_game_2`, ...) and set the schema on that server with `l2nx.database.schema` (environment variable
+`L2NX_DATABASE_SCHEMA`) together with `spring.datasource.username`. A schema name matches `[a-z_][a-z0-9_]{0,62}`.
+Character and clan names are unique within a game schema; game servers that share a database do not share names.
+
+Account logins, character names and clan names are compared without regard to case, through an ICU collation that
+each schema creates for itself.
+
+**Upgrading the servers.** Before 1.0 each server has one baseline schema that is edited in place, so moving between
+pre-1.0 versions means creating the database anew; the release notes say when. A Liquibase checksum error at start
+means exactly this. From 1.0 on, changes arrive as new migrations that run at start and only move forward: back up the
+database before you upgrade, a downgrade is not supported.
+
+**Upgrading PostgreSQL or its ICU library.** A new ICU version can order collated values differently, and a unique
+index built under the old order may then be wrong. After such an upgrade, run for each schema, as a user that owns it:
+
+```sql
+REINDEX SCHEMA game;
+ALTER COLLATION game.case_insensitive REFRESH VERSION;
+```
+
+and the same for `login`. PostgreSQL warns about a collation version mismatch in its log until you do.
 
 ## Health and metrics
 
@@ -97,8 +138,8 @@ docker build -t l2nx/login-server login/boot
 
 ```sh
 docker run -d --name game-server --stop-timeout 120 --restart on-failure \
-  -e SPRING_DATASOURCE_URL='jdbc:mysql://db-host:3306/l2nx?allowPublicKeyRetrieval=true&useSSL=false' \
-  -e SPRING_DATASOURCE_USERNAME=l2nx -e SPRING_DATASOURCE_PASSWORD=change-me \
+  -e SPRING_DATASOURCE_URL='jdbc:postgresql://db-host:5432/l2nx' \
+  -e SPRING_DATASOURCE_USERNAME=l2nx_game -e SPRING_DATASOURCE_PASSWORD=change-me \
   -v "$PWD/geodata:/opt/game-server/data/geodata" -p 7777:7777 \
   l2nx/game-server
 ```
