@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 440" width="100%" role="img" aria-labelledby="zt-title zt-desc">
+<title id="zt-title">Sleep and a hit at the same moment: classic build versus Zero-Tick</title>
+<desc id="zt-desc">A mage casts Sleep on a monster while a warrior hits it. If Sleep lands first, the hit wakes the monster and Sleep is wasted; if the hit lands first, the monster falls asleep. Left, a classic build: Sleep runs on one pool thread and the hit on another, both reach the monster at once, and the result changes from run to run. Right, Zero-Tick: the partition thread takes both from one queue in arrival order, hit first, then Sleep, so the monster falls asleep every time.</desc>
+<style>@font-face{font-family:'ZT Head';font-weight:600;src:url(data:font/woff2;base64,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) format('woff2');unicode-range:U+0020,U+002D,U+0031,U+0032,U+003F,U+0043,U+0054,U+005A,U+0061,U+0062,U+0063,U+0064,U+0065,U+0069,U+006B,U+006C,U+006F,U+0072,U+0073,U+0075}
+@font-face{font-family:'ZT Text';font-weight:500;src:url(data:font/woff2;base64,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) format('woff2');unicode-range:U+0020,U+002C,U+0031,U+0032,U+0053,U+0061,U+0064,U+0065,U+0067,U+0068,U+0069,U+006B,U+006C,U+006D,U+006E,U+006F,U+0070,U+0072,U+0073,U+0074,U+0075,U+0076,U+0077,U+0079,U+007A,U+00B7}
+svg{--bg:#0d0f13;--card:#191d25;--surface:#1f2329;--fg:#f0f1f4;--muted:#c0c4cd;--faint:#9a9fa6;--accent:#00d9d9;--accent-low:#003737;--accent-high:#71fbf6;--success:#38d99a;--warning:#e8a33d;--violet:#8b5cf6;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.18)}
+.h{font-family:'ZT Head',sans-serif;font-weight:600}.t{font-family:'ZT Text',sans-serif;font-weight:500}
+@keyframes ka1{0%{opacity:0;transform:translate(0,0) scale(1)}3.333%{opacity:0;transform:translate(0,0) scale(1)}6.667%{opacity:1;transform:translate(0,0) scale(1)}26.667%{opacity:1;transform:translate(101px,0px) scale(1)}33.333%{opacity:0;transform:translate(161px,50px) scale(.2)}99.833%{opacity:0;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(0,0) scale(1)}}
+.a1{animation:ka1 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka2{0%{opacity:0;transform:translate(0,0) scale(1)}3.333%{opacity:0;transform:translate(0,0) scale(1)}6.667%{opacity:1;transform:translate(0,0) scale(1)}26.667%{opacity:1;transform:translate(117px,0px) scale(1)}33.333%{opacity:0;transform:translate(177px,-50px) scale(.2)}99.833%{opacity:0;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(0,0) scale(1)}}
+.a2{animation:ka2 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka3{0%{opacity:1}38.333%{opacity:0}91.667%{opacity:1}100%{opacity:1}}
+.a3{animation:ka3 6s step-end infinite;}
+@keyframes ka4{0%{opacity:0}38.333%{opacity:1}45%{opacity:0}51.667%{opacity:1}58.333%{opacity:0}65%{opacity:1}71.667%{opacity:0}78.333%{opacity:1}85%{opacity:0}91.667%{opacity:0}100%{opacity:0}}
+.a4{animation:ka4 6s step-end infinite;}
+@keyframes ka5{0%{opacity:0}38.333%{opacity:0}45%{opacity:1}51.667%{opacity:0}58.333%{opacity:1}65%{opacity:0}71.667%{opacity:1}78.333%{opacity:0}85%{opacity:1}91.667%{opacity:0}100%{opacity:0}}
+.a5{animation:ka5 6s step-end infinite;}
+@keyframes ka6{0%{opacity:.45}38.333%{opacity:1}45%{opacity:0.35}51.667%{opacity:1}58.333%{opacity:0.35}65%{opacity:1}71.667%{opacity:0.35}78.333%{opacity:1}85%{opacity:0.35}91.667%{opacity:.45}100%{opacity:.45}}
+.a6{animation:ka6 6s step-end infinite;}
+@keyframes ka7{0%{opacity:.45}38.333%{opacity:0.35}45%{opacity:1}51.667%{opacity:0.35}58.333%{opacity:1}65%{opacity:0.35}71.667%{opacity:1}78.333%{opacity:0.35}85%{opacity:1}91.667%{opacity:.45}100%{opacity:.45}}
+.a7{animation:ka7 6s step-end infinite;}
+@keyframes ka8{0%{opacity:0}32.5%{opacity:0}34.167%{opacity:1}93.333%{opacity:1}98.333%{opacity:0}100%{opacity:0}}
+.a8{animation:ka8 6s ease-in-out infinite;}
+@keyframes ka9{0%{opacity:0;transform:scale(.3)}32.5%{opacity:0;transform:scale(.3)}35%{opacity:1;transform:scale(1.3)}38.333%{opacity:1;transform:scale(1)}93.333%{opacity:1;transform:scale(1)}98.333%{opacity:0;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.a9{animation:ka9 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka10{0%{opacity:0}35.833%{opacity:0}38.333%{opacity:1}93.333%{opacity:1}98.333%{opacity:0}100%{opacity:0}}
+.a10{animation:ka10 6s ease-in-out infinite;}
+@keyframes ka11{0%{opacity:0;transform:translateX(0) scale(1)}3.333%{opacity:0;transform:translateX(0) scale(1)}6.667%{opacity:1;transform:translateX(0) scale(1)}23.333%{opacity:1;transform:translateX(140px) scale(1)}33.333%{opacity:1;transform:translateX(140px) scale(1)}38.333%{opacity:0;transform:translateX(217px) scale(.2)}99.833%{opacity:0;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(0) scale(1)}}
+.a11{animation:ka11 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka12{0%{opacity:0;transform:translateX(0) scale(1)}10%{opacity:0;transform:translateX(0) scale(1)}13.333%{opacity:1;transform:translateX(0) scale(1)}30%{opacity:1;transform:translateX(14px) scale(1)}38.333%{opacity:1;transform:translateX(14px) scale(1)}46.667%{opacity:1;transform:translateX(108px) scale(1)}51.667%{opacity:0;transform:translateX(201px) scale(.2)}99.833%{opacity:0;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(0) scale(1)}}
+.a12{animation:ka12 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka13{0%{opacity:1}38.333%{opacity:0}93.333%{opacity:1}100%{opacity:1}}
+.a13{animation:ka13 6s step-end infinite;}
+@keyframes ka14{0%{opacity:0}51.667%{opacity:1}93.333%{opacity:0}100%{opacity:0}}
+.a14{animation:ka14 6s step-end infinite;}
+@keyframes ka15{0%{opacity:0}38.333%{opacity:1}51.667%{opacity:0}100%{opacity:0}}
+.a15{animation:ka15 6s step-end infinite;}
+@keyframes ka16{0%{opacity:0;transform:scale(.8)}35.833%{opacity:0;transform:scale(.8)}38.333%{opacity:1;transform:scale(1)}46.667%{opacity:0;transform:scale(1.6)}100%{opacity:0;transform:scale(1.6)}}
+.a16{animation:ka16 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka17{0%{opacity:0;transform:scale(.8)}49.167%{opacity:0;transform:scale(.8)}51.667%{opacity:1;transform:scale(1)}60%{opacity:0;transform:scale(1.6)}100%{opacity:0;transform:scale(1.6)}}
+.a17{animation:ka17 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka18{0%{opacity:0}52.5%{opacity:0}55.833%{opacity:1}93.333%{opacity:1}98.333%{opacity:0}100%{opacity:0}}
+.a18{animation:ka18 6s ease-in-out infinite;}
+@keyframes ka19{0%{opacity:0;transform:scale(.3)}54.167%{opacity:0;transform:scale(.3)}56.667%{opacity:1;transform:scale(1.3)}60%{opacity:1;transform:scale(1)}93.333%{opacity:1;transform:scale(1)}98.333%{opacity:0;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.a19{animation:ka19 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:reduce){*{animation-delay:-4s!important;animation-play-state:paused!important}}
+.card{fill:var(--card);stroke:var(--border)}
+.lane{fill:none;stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.char{fill:var(--surface);stroke:var(--border-strong);stroke-width:2}
+.mob{fill:var(--muted)}
+.mob.angry{fill:var(--warning)}
+.eye{fill:var(--bg)}
+.lid{fill:none;stroke:var(--bg);stroke-width:2.2;stroke-linecap:round}
+.zz{fill:var(--violet)}
+.chip{fill:var(--surface);stroke-width:2}
+.chip.hit{stroke:var(--accent)}
+.chip.sleep{stroke:var(--violet)}
+.num.hit{fill:var(--accent)}
+.num.sleep{fill:var(--violet)}
+.numtext{fill:var(--bg)}
+.chiptext{fill:var(--fg)}
+.clash{fill:none;stroke:var(--warning);stroke-width:2.5}
+.badge-bad{fill:var(--warning)}
+.badge-ok{fill:var(--success)}
+.badge-text{fill:var(--bg)}
+.tick{fill:none;stroke:var(--bg);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.pulse-hit{fill:none;stroke:var(--accent);stroke-width:3}
+.pulse-sleep{fill:none;stroke:var(--violet);stroke-width:3}
+.moon{fill:var(--violet)}
+.alarm{fill:var(--warning)}
+.alarm-mark{stroke:var(--bg);stroke-width:2.6;stroke-linecap:round}
+.title{fill:var(--fg)}
+.label{fill:var(--faint)}
+.text{fill:var(--fg)}
+.ok{fill:var(--success)}
+</style>
+<rect class="card" x="16.5" y="16.5" width="279" height="407" rx="14"/>
+<rect class="card" x="304.5" y="16.5" width="319" height="407" rx="14"/>
+<text class="h title" x="36" y="54" font-size="24">Classic build</text>
+<text class="h title" x="324" y="54" font-size="24">Zero-Tick</text>
+<text class="t label" x="36" y="90" font-size="22">thread 1 · mage</text>
+<text class="t label" x="36" y="246" font-size="22">thread 2 · warrior</text>
+<path class="lane" d="M36 116H180L240 166M36 216H180L240 166"/>
+<circle class="clash a8" cx="240" cy="166" r="37"/>
+<circle class="char" cx="240" cy="166" r="30"/><g class="a3"><path class="mob" d="M222 181C218 162 226 150 240 150C254 150 262 162 258 181ZM229 153l-5-9l10 5zM251 153l5-9l-10 5z"/><g class="eye"><circle cx="234" cy="163" r="2.6"/><circle cx="246" cy="163" r="2.6"/></g><path class="eye" d="M233 171l2.5 5l2.5-5zM242 171l2.5 5l2.5-5z"/></g><g class="a4"><path class="mob" d="M222 181C218 162 226 150 240 150C254 150 262 162 258 181ZM229 153l-5-9l10 5zM251 153l5-9l-10 5z"/><path class="lid" d="M231 162q3 3 6 0M243 162q3 3 6 0"/><text class="t zz" x="196" y="152" font-size="22">zz</text></g><g class="a5"><path class="mob angry" d="M222 181C218 162 226 150 240 150C254 150 262 162 258 181ZM229 153l-5-9l10 5zM251 153l5-9l-10 5z"/><g class="eye"><circle cx="234" cy="163" r="2.6"/><circle cx="246" cy="163" r="2.6"/></g><path class="eye" d="M233 171l2.5 5l2.5-5zM242 171l2.5 5l2.5-5z"/><path class="lid" d="M230 155l7 4M250 155l-7 4"/></g>
+<g class="a1"><rect class="chip sleep" x="36" y="99.0" width="86" height="34" rx="17.0"/><text class="t chiptext" x="50" y="123.5" font-size="22">Sleep</text></g><g class="a2"><rect class="chip hit" x="36" y="199.0" width="54" height="34" rx="17.0"/><text class="t chiptext" x="50" y="223.5" font-size="22">hit</text></g>
+<g class="a9"><circle class="badge-bad" cx="264" cy="140" r="14"/><text class="h badge-text" x="264" y="148" font-size="22" text-anchor="middle">?</text></g>
+<g class="a10">
+<text class="t label" x="36" y="300" font-size="22">result</text>
+<g class="a6"><path class="moon" d="M49 320a9 9 0 1 0 6 15a7 7 0 0 1-6-15z"/><text class="t text" x="66" y="338" font-size="22">monster asleep</text></g>
+<g class="a7"><circle class="alarm" cx="46" cy="366" r="10"/><path class="alarm-mark" d="M46 360v6M46 371v.5"/><text class="t text" x="66" y="374" font-size="22">monster awake,</text><text class="t label" x="66" y="402" font-size="22">Sleep wasted</text></g>
+</g>
+<text class="t label" x="324" y="132" font-size="22">partition thread</text>
+<path class="lane" d="M324 166H554"/>
+<circle class="pulse-hit a16" cx="584" cy="166" r="34"/>
+<circle class="pulse-sleep a17" cx="584" cy="166" r="34"/>
+<circle class="char" cx="584" cy="166" r="30"/><g class="a13"><path class="mob" d="M566 181C562 162 570 150 584 150C598 150 606 162 602 181ZM573 153l-5-9l10 5zM595 153l5-9l-10 5z"/><g class="eye"><circle cx="578" cy="163" r="2.6"/><circle cx="590" cy="163" r="2.6"/></g><path class="eye" d="M577 171l2.5 5l2.5-5zM586 171l2.5 5l2.5-5z"/></g><g class="a14"><path class="mob" d="M566 181C562 162 570 150 584 150C598 150 606 162 602 181ZM573 153l-5-9l10 5zM595 153l5-9l-10 5z"/><path class="lid" d="M575 162q3 3 6 0M587 162q3 3 6 0"/><text class="t zz" x="540" y="152" font-size="22">zz</text></g><g class="a15"><path class="mob angry" d="M566 181C562 162 570 150 584 150C598 150 606 162 602 181ZM573 153l-5-9l10 5zM595 153l5-9l-10 5z"/><g class="eye"><circle cx="578" cy="163" r="2.6"/><circle cx="590" cy="163" r="2.6"/></g><path class="eye" d="M577 171l2.5 5l2.5-5zM586 171l2.5 5l2.5-5z"/><path class="lid" d="M574 155l7 4M594 155l-7 4"/></g>
+<g class="a11"><rect class="chip hit" x="324" y="149.0" width="86" height="34" rx="17.0"/><circle class="num hit" cx="343" cy="166" r="13"/><text class="h numtext" x="343" y="173.5" font-size="22" text-anchor="middle">1</text><text class="t chiptext" x="362" y="173.5" font-size="22">hit</text></g><g class="a12"><rect class="chip sleep" x="324" y="149.0" width="118" height="34" rx="17.0"/><circle class="num sleep" cx="343" cy="166" r="13"/><text class="h numtext" x="343" y="173.5" font-size="22" text-anchor="middle">2</text><text class="t chiptext" x="362" y="173.5" font-size="22">Sleep</text></g>
+<g class="a19"><circle class="badge-ok" cx="606" cy="140" r="14"/><path class="tick" d="M599 140l5 5l9-10"/></g>
+<g class="a18">
+<text class="t label" x="324" y="300" font-size="22">result</text>
+<path class="moon" d="M337 320a9 9 0 1 0 6 15a7 7 0 0 1-6-15z"/><text class="t ok" x="354" y="338" font-size="22">monster asleep</text>
+<text class="t label" x="324" y="374" font-size="22">Same order every time</text>
+</g>
+</svg>

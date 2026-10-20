@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 440" width="100%" role="img" aria-labelledby="zt-title zt-desc">
+<title id="zt-title">Сон и удар в один момент: обычная сборка против Zero-Tick</title>
+<desc id="zt-desc">Маг кидает Сон на моба, а воин в тот же момент бьёт его. Если первым ложится Сон, удар будит моба и сон уходит впустую; если первым проходит удар, моб засыпает. Слева обычная сборка: Сон выполняется в одном потоке пула, удар в другом, оба одновременно добираются до моба, и итог от раза к разу разный. Справа Zero-Tick: поток партиции берёт оба события из одной очереди в порядке прихода, сначала удар, потом Сон, и моб засыпает каждый раз.</desc>
+<style>@font-face{font-family:'ZT Head';font-weight:600;src:url(data:font/woff2;base64,d09GMgABAAAAAAUIAA8AAAAACIwAAASvAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGiIbgVQcMAZgP1NUQVQqAGwRCAqILIcCATYCJAMwCxoABCAFVAcgG8MGyB6FcbNzaVRRHAUxZRZvQUR5VPVkVsnKPNMvE09qQQ5NCerzyN4HQKn4P9fUi8JF4j2fTWQ4s6y/LIzEWSEFUGQRDnyANt9Vu4MCuInPphMRwBEAEDT2CELtiGdN4snFqKCqbQzE7SMCvYG4h0OwLxCjAT4Pue4ugb6ADlI0ilWYNLndGw3YUkw0qRRTAWUQsEUw0NhiNy5k4JKgZlr9/4ZtgNhrYA8mgJtzFf5oIJRIBBvcrAEIt6ssb2GgC7sKnHIf5USScVqatsrtpNVwxCaAAmpaIgCqN5dWIMgvXAXFzXWaGhrBvA7WekgX/10LfRihFgACoFzUqfOjDqxgj8zxRIBA1GA392CExTAB8drNuDhqxDwxRl+uaQLgjisGSgdrAS2pZbUCcmXk6si1//+PJsovktHy3+CVmy4675yTjjmc4IYEmTnbBRAcAfAFPO4sALkWQHObeltjghjjXd2Y8ThdcbBdXYnx6UnxcHSxhkPm6amMPTuzpp+cMOb2caPphapqOnXBnGYDY1pMDXvduzu5ive3xg5OYk4bbic365b2RpcoM3z9+WUttbUk0g7N7SZnw4iD7XDFynvV952JNYbi1e6nxLtvH8cuWFwNm67thOypCLLr2u7XZ+xYNhZWY6wGFpiNMCm1I5Y2xeSI2J5mEnaMNAw07ANaM6dtTvrTHK6ZHwoza7vwfVW12x6dVX987CS7lzEpiNXGrJjIrrEJlj6BafoIzaKmbW5qVATHxrrs8s7WUUyzLQrkbryqm/aI9pSeBlZvgJVPHMEahdaz3KpOk0d3g8YK656FKgHPrtX1K226B2nbqXD7yfGTmwmrGLBLaNmr8PgpyAe/zl4ZHmwjyxGJXsZmsMorMJhhp3ZjMnqN8crcYzDSvfJLDXd2bVspHj89am8+q9wtxHYcO14RBEEkQX/8fMhyZ0OSrWh9uvWYGkRWQtq4o9gctJXu4+tiDUglGBTgnDhY2J9oYl+VyjdnxdPbblDROaiKk4yQl5q2THCAgo4Xd3tQGSvrzYT4hJV/UVHUCuVQ4BJ51GDKYeb6H1s3c9yezXUrefz49jDrnbuPr5JgaxCsIBthaCQbHqxkoB+kJBNpZCAdHqRg4Cu4HVCZk5NKfTs9/RoBJ1flP7oi/8SNfjaVn5pGCWq7qAlE6ugIRrirGrL2X/7wa+Yzqv2qcHBRaswIJr+GVOXiplH/RbitoZ+iRIS+vlRkkIqRjC2HpH5U+IhjjGC9X1V2Tir1Lr7ohYkjeijqu7BB54PG7cm0LPnY7TWSI0cxLR5K9hYKehzmQoFL1LBxshbeQFp5AQFGpUldd25ND26qo8QEcjLMWSVPFdfPLsPx8J9xXrdER0qITrFUx5X31WXYoPWAgX2yWV19TOouSH2jYz/7ADD6AwIoyuWd1Qu2wyv8am8Y7wHeLowItfbNAP//xepCPQVsUQAIfDhgCMBgp5lR66YdVSKeZFKsEiJOGQOX4qBAqQZpE2BTLgnKl6UhUh0Vdv+/IpaPIRu48wziMRDtgMIZqIyAI86beeGKP/VwwY0QvHEgEDMJHsi0O8EYEfCBhBTxA+zO+7TF/z2k4wIAAA==) format('woff2');unicode-range:U+041E,U+0430,U+0431,U+043A,U+043D,U+043E,U+0440,U+0441,U+0447,U+044B,U+044F}
+@font-face{font-family:'ZT Head';font-weight:600;src:url(data:font/woff2;base64,d09GMgABAAAAAASUAA8AAAAACIgAAAQ8AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhwbgnIcKgZgP1NUQVQcAIEMEQgKhwiFWAE2AiQDQAsiAAQgBTgHIBuxBlGUT86qED8TTJWNR6H0RPaKDt0WFWIihr12W8if6JfBx/9+7c68933F0iJuzRtnUyIRC50QSURCgail/ePfyyaLQ95may1rpGC2pP+ORAEe9NX2eP5lz513CbZfupRMIWQmmEDXFE0oTRGafAvgf+B0un9tQgPa+prZ/TrsXgqsQBMM6PsFyx5IGFieBTQAC5yydkgvVN6unD9aq/23RqABAMwsIZmCCJTm7fJu7xUE7MelKAfYIqD+T0D3a0EObAECElnOSqekI4JgaN4qCcSazJ3W7CxRp4k6y16BAd7hG3KlXq2vXCWtQ+/8u8mAKtT/xvSAo9PGMfQb/ksF8P+PsMAKUKnkmpoKYg1BBCAJSEEGLBhPZUTCXWK5AiQf3X/RMi4fx1JixhKGCX+WGuBhEZ0Yjxb4yqOvDwC8wbSn1cDGF+JrOEAA/Wj3ANMCkZzAAAD4eUsrwmgLBGErkF1Q9AwY6ghK0zbsujISIVGydJlyFTSy051P2O+Jg9+/8PTDD91/3913wmBc1P/aRN8BMI0dWkBnQOOBEUWW+7+FadztcnMJlpbiZkKSLbZFm8tisBiIiWNigDMQloqxMAKSgID4jr4+DKvv70edvb0aQXuuvME7enoA6np7UedXreBDPT2qEgDrcHBSKXjXp54IdKTvxOsQE9FQKAoKxkNwKEN1PT0hnf17QW345qMRHQHa+xYhwDs+AY1g4kF4JGKgU/1Qz5sfr8pn8Yve5+Fx7dU5QEAoVv/Uhn/3K1Z/4Q3e8erRDJZrWXKO7QII6viC1X9FnZ+h7lMoRkBsxwOs/iHqvA919xAd0ZZ8P2crZn/2BYM9SSfZkVn9q+XpWWBAeBTaOOX7sf1qwJ/Uwz3JyC6kOUeW/JItEDpoclyNcCOOi4OW0O5bfo7CVbvgJGPQJkR5JFngzfKxy88lKY9M0ibfS1io4O1qZek3FmM45BWq/dJ63dDJyszC0Qqoe4XtEpfv7Pz27d/G9ruvJF6DMSEqsnXK8xX3dcovshGJ3iHEl+UV2lLJ9r5+FE5Zzt5+BlDf8q0kLthwbFNI4x4LVaClSaTNVG6z7LlHz19kGBNp6yj1Oyuwh8Mwp0iS9HZylCgS83JOL7Tw8Cgwd4h3wp3NImOsr3x57xumtrk+DfqH1Y1zegSzkjrqa61c/msnvmKJvKtTQqGJh3u2CRlha6Pt6WxgaCnXL6tsuchV5/M1uDyNvoc6uL1NFaRCia7aK03NV2oap9J9TwH1rfAbVbrVBqnWggGH4IP21C4B46X5uHFs2/af08M/AJ/7NHe3s7sTEf1l07wBSBmA8IMXw1sA2M0hSHaCNhPjP+AjhTgwiDejuDIaJofRd5dkRtOKmnuIjOjFGWducAesDZM7GOjYYR0mOM8EbFKgdYG1QL+boKHlUbJUxbLEKxAqWbpUaYrQAVDvYww=) format('woff2');unicode-range:U+0020,U+002D,U+0031,U+0032,U+003F,U+0054,U+005A,U+0063,U+0065,U+0069,U+006B,U+006F,U+0072}
+@font-face{font-family:'ZT Text';font-weight:500;src:url(data:font/woff2;base64,d09GMgABAAAAAAfEAA8AAAAADUAAAAdtAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGjQbgz4cMAZgP1NUQVQqAGQRCAqPKIwTATYCJANgCzIABCAFUAcgG3QKUZRO0hQkPw5yMldTKK4qirvdxSWLauMuq/NZdPEaPNF+2pvZCW2AftIeAJJiVX2q/s4IYpAEf3g87V/adUi668A2ozOiGJgUTAchO/YAzm4PcvFhJMD7vlVraX8vQAqxPAoNqCJ0jJmfYN/do0N0QdYRJka+cAFGYSJkZIyLcB796WvKZPhuU1mUUIe+rPHVsSMCpAAAJVpXFeJ4hHSqkE0VCiRSy1Qwdl9PS7rjBg8dPZlg0Y6NqwlWL9i8lgAD+FmZsGrJxrXEwcjF0FLF81tp7t8qy0gms5LNXGG/rQnv1ZGDdG6YyqNZ6PWnqm12O2XIkadAkYASZQe8Be+DAT1j4VfJ8E8YhScI/6LC8qsKlepw5MEDAHVrOBvxJDIiDwsG3wfjcIbyBeARoUr4BR6HstNIRyyXgALPpDpfuTMG9GeqnSjcnKEFXMCu8dpRkgxShBoUIRElASGUs7oIAIgzCiJO25h11wm2bE3bmLoJdWfQ7qYb5Q8ioFWqAEbJ6DKXjvyGGynHHz9j4iROmJ3h7sn/67AjUgQI7tSsnrbVJzErJZ5RAjGhNrpt2fLN0qkkISnKH4Mozq1z0N2M8UCOHA6sYF4WawnGtyzDw9AUWEmSZVrR594vv/3Nb3z9CwS2CIIiS+lC5ce1BxqBLgbX4eR4Ji5FpUE+WM9hHUqLaWaDxtngXJBiRkvePWGTZscRuVzcIVc/bh+N5dxl2ZtEGNb7DM8NYIs+4b4g3gqWIfsePl2GNEtXHsAw1CCu4kbpLt9rNNZGk6l5UYPBCx4zwnv1erCFyHKb3nogwaiXturxYg3S3H0Z3Yhm7cUloptxgYebGFoa0Lxs5tE92T7TXQj6mqow2LJ4ufx7ypueiavIL5ri5eD4xCoOOr0+9PjAgMs8zpOjF+kApDG+GNnyHGFk+z6+DbYMzPhOP2XlmfHifJk6d+GCVnOFK4H8X8EaMFUK7bu6PM4ZNkHnNJA1DQGwMEElHd6iR0+PjAQucazB8/hpB+ag4fkWXJGDjOj15NCdF/DeZ7dQhIHQTs07k4gZTD8+46CwegBkGiJRUh8YyPfd1I5CFazbLAkP6NHTev2Ky4webmuWyrF8BayiQQwXBIOhu9YqmeKMGkNbd8NoUgYiXXaSI/qDK8GA3PfWP8cpNRx6QaVm5FAIHYasAazSfU/vRpQgShJR6HlM4MSlezBCqiZZSaGEZZJyiGmhIfTED68MBvCk53t/omb5g8H58HlhZgl5ytLMf9T5+4jornW0xOYdT0FMdBjx+Y8ZiqzkkKLCsCq7xONlp9wv+H3v59HXm4uukTu9952r9wiKe+43ALotmo+SuaMNDXnjR9XNeHdUjvpm3Wdkcg5RlhvSk5kdRlXmFmG5bDtNKzMDL6YiwbcMf75d3HeBWNodYl2oJqARC3G+8k1lU83JNzk2/vnq5ODWQjclPaNp6T1EFsZ1TwpypJzfphazOaufgABGjNDtpF+enSKqANEEVON8AStQZCVoY5W3V41px1ZEYstsTtvykyJG4Rh3nXtOZXJ0Y3ZeUmcLN18V8b1nbkiwh+BheBg32FsQFOSR+z5IZ33kLbDc5xvC/veFCg3lhQf/L+Xb+p5S7kS/e87mbCDXHFuLCDv94pyLZ+Afzk0gndWuhrXAbuAf1C19LrmApvawjGbv0gn+qR5sHPT5W3ErACoOcib/dwH+DHErP6EPJ5KotkwiWRGckscppsN0eGOAN/evCDazqafuHk9Q4iFMNkfXgsPvM31AOqu2u1Gt+IVX9imnc4MLxc3v4H3F0fd6Fv69EPQdfqfiXWCj8oh26jVLo5E0edBGVq1WB2iD7Jj0DMsM9l+FfDQZpLO2j/4/9Gdrtvbogr37osOxntwf/f5R7eMQxt+NIIghauclUYQwqa9dINZhQSIlxK3F23gidRwvwgPHMA9C9oiL5Ue4E2R0x4MbpLPu4t8R7Z9a0m6+rDDLv0wGxhRVZ0dShYVRVF2mMODjj2z/P12K+4WDR0SiRAYWF8nHvIVYpCchCAM+DHELP64PL0ro78iSJin9E/J21T66GxTPjUaFYRHueAYWG8j3PtOwh5tX5gOuatfUT9VrWiDaEr6DcPrci5qY2z7XeXjeiRfehgkn8POPMIAcYq5C69df673Wu2J23ap/180dN4FpYPAMq1b3va5eJ/gH/BNpp/qtqkreq2XVvldizk2srkvIF7UJEvqEeDzVypeQcRmr5En3jOFGoEQklki+IZy6VZfXZYzq1bHOgK2jc+1eZGsPr6IOvcmPr+EceJFh1znxfB8KwM5/NWdVBl4xVgfPy6Z8izv3AeBdtU/9sFInEmEN/VPvwq91KqDyG2h0tR2JxBiczU9Vqb4EehKRPqa1RtBG82inQfSTe/RTkqKm0UqVGi4pEkte7weRDklOcEVpd2jwyIckZM+MFkjqBEpyqM2HurMfVElPHLOamy2OlteJYgmUDOgyAikyorh1TSayhGVsYTUL2Mi0iBUxspzNjCEsJspjDdTGrYXniQI=) format('woff2');unicode-range:U+0412,U+0421,U+0430,U+0431,U+0432,U+0433,U+0434,U+0435,U+0438,U+043A,U+043B,U+043C,U+043D,U+043E,U+043F,U+0440,U+0441,U+0442,U+0443,U+0445,U+0446,U+044E,U+044F}
+@font-face{font-family:'ZT Text';font-weight:500;src:url(data:font/woff2;base64,d09GMgABAAAAAALIAA8AAAAABPwAAAJuAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhQbgSAcMAZgP1NUQVQqAFQRCAqCHIFwATYCJAMcCxAABCAFUAcgG78DKB6DbbP5MkZGIIY1JMTrD9/nJ4Jqre+zeuYdEStkUCcx/FlAlAwWNX5ceD729537PhGFBEWFhjWrOzXdddOGBCajb9+0iYwBB4CD0aYDD9a60763FRZB4mnmWRJYwqkGnrVdwkTOGcUH4dzG8NT1iENaLQmBMoAYzpTSiq5k/QcOH69K75a1y1Xpm7N+pSrkUIAgli1Yu1IJJIGkmA4kJYQSkgpANWoRkhCKBLUQeR/KyZEWG5QMPlPeVSCbFI5KE/LCXqZtaIf1TL0TAOSpufxAQ9qpNGGYjMRMnfgbxpnrRzePHeeOAJezi78nkN+QCgSk8uk+aEBJIZQQqEKgDmnTosXrAyQBUVl+ABIyVCETqEKuN5RRQpJrQBs6sZXLBeB0R/L/w7t784UIwKshCrAhFAflUITRMB8gLw24RalS9ZxlSseiMlLWfAuli0rF5dPb1qa8dEw6/vh4XiZfjDufPMb9r6+ldz0/m3j51L2uLBNWtk9XP3QYG0ell0+YeHnXpHXnYUw6dfCJG63Ht+ho2XayJtrVus3+9nuLw/9VaD/sAe6mTzs1VTU+G+b698p36t9qq29k0IjFzbJ9F7XPT+/XKzVn5KhXm1OjuvVsens1euTZTN1yO1yNVreKNBww7juTzer1r+cdX9ezrp5vPNhIIOn7/avs487yha8SWfYV+Lwv3EB2O6v6vz1p0gNQTAJB0Zq6JJbW+SoHAIqnJlRRMq1lvapKF2pLJUQlekmRXgSKq0eAwFWmFZnIS0rKYYKgjHJQWaRajGUBi9jAcuawlkksYAmLWMx6RrCA+SxhAyvIgEJ1AgAAAA==) format('woff2');unicode-range:U+0020,U+002C,U+0031,U+0032,U+007A,U+00B7}
+svg{--bg:#0d0f13;--card:#191d25;--surface:#1f2329;--fg:#f0f1f4;--muted:#c0c4cd;--faint:#9a9fa6;--accent:#00d9d9;--accent-low:#003737;--accent-high:#71fbf6;--success:#38d99a;--warning:#e8a33d;--violet:#8b5cf6;--border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.18)}
+.h{font-family:'ZT Head',sans-serif;font-weight:600}.t{font-family:'ZT Text',sans-serif;font-weight:500}
+@keyframes ka1{0%{opacity:0;transform:translate(0,0) scale(1)}3.333%{opacity:0;transform:translate(0,0) scale(1)}6.667%{opacity:1;transform:translate(0,0) scale(1)}26.667%{opacity:1;transform:translate(109.5px,0px) scale(1)}33.333%{opacity:0;transform:translate(169.5px,50px) scale(.2)}99.833%{opacity:0;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(0,0) scale(1)}}
+.a1{animation:ka1 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka2{0%{opacity:0;transform:translate(0,0) scale(1)}3.333%{opacity:0;transform:translate(0,0) scale(1)}6.667%{opacity:1;transform:translate(0,0) scale(1)}26.667%{opacity:1;transform:translate(104.5px,0px) scale(1)}33.333%{opacity:0;transform:translate(164.5px,-50px) scale(.2)}99.833%{opacity:0;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(0,0) scale(1)}}
+.a2{animation:ka2 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka3{0%{opacity:1}38.333%{opacity:0}91.667%{opacity:1}100%{opacity:1}}
+.a3{animation:ka3 6s step-end infinite;}
+@keyframes ka4{0%{opacity:0}38.333%{opacity:1}45%{opacity:0}51.667%{opacity:1}58.333%{opacity:0}65%{opacity:1}71.667%{opacity:0}78.333%{opacity:1}85%{opacity:0}91.667%{opacity:0}100%{opacity:0}}
+.a4{animation:ka4 6s step-end infinite;}
+@keyframes ka5{0%{opacity:0}38.333%{opacity:0}45%{opacity:1}51.667%{opacity:0}58.333%{opacity:1}65%{opacity:0}71.667%{opacity:1}78.333%{opacity:0}85%{opacity:1}91.667%{opacity:0}100%{opacity:0}}
+.a5{animation:ka5 6s step-end infinite;}
+@keyframes ka6{0%{opacity:.45}38.333%{opacity:1}45%{opacity:0.35}51.667%{opacity:1}58.333%{opacity:0.35}65%{opacity:1}71.667%{opacity:0.35}78.333%{opacity:1}85%{opacity:0.35}91.667%{opacity:.45}100%{opacity:.45}}
+.a6{animation:ka6 6s step-end infinite;}
+@keyframes ka7{0%{opacity:.45}38.333%{opacity:0.35}45%{opacity:1}51.667%{opacity:0.35}58.333%{opacity:1}65%{opacity:0.35}71.667%{opacity:1}78.333%{opacity:0.35}85%{opacity:1}91.667%{opacity:.45}100%{opacity:.45}}
+.a7{animation:ka7 6s step-end infinite;}
+@keyframes ka8{0%{opacity:0}32.5%{opacity:0}34.167%{opacity:1}93.333%{opacity:1}98.333%{opacity:0}100%{opacity:0}}
+.a8{animation:ka8 6s ease-in-out infinite;}
+@keyframes ka9{0%{opacity:0;transform:scale(.3)}32.5%{opacity:0;transform:scale(.3)}35%{opacity:1;transform:scale(1.3)}38.333%{opacity:1;transform:scale(1)}93.333%{opacity:1;transform:scale(1)}98.333%{opacity:0;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.a9{animation:ka9 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka10{0%{opacity:0}35.833%{opacity:0}38.333%{opacity:1}93.333%{opacity:1}98.333%{opacity:0}100%{opacity:0}}
+.a10{animation:ka10 6s ease-in-out infinite;}
+@keyframes ka11{0%{opacity:0;transform:translateX(0) scale(1)}3.333%{opacity:0;transform:translateX(0) scale(1)}6.667%{opacity:1;transform:translateX(0) scale(1)}23.333%{opacity:1;transform:translateX(115px) scale(1)}33.333%{opacity:1;transform:translateX(115px) scale(1)}38.333%{opacity:0;transform:translateX(204.5px) scale(.2)}99.833%{opacity:0;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(0) scale(1)}}
+.a11{animation:ka11 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka12{0%{opacity:0;transform:translateX(0) scale(1)}10%{opacity:0;transform:translateX(0) scale(1)}13.333%{opacity:1;transform:translateX(0) scale(1)}30%{opacity:1;transform:translateX(6px) scale(1)}38.333%{opacity:1;transform:translateX(6px) scale(1)}46.667%{opacity:1;transform:translateX(125px) scale(1)}51.667%{opacity:0;transform:translateX(209.5px) scale(.2)}99.833%{opacity:0;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(0) scale(1)}}
+.a12{animation:ka12 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka13{0%{opacity:1}38.333%{opacity:0}93.333%{opacity:1}100%{opacity:1}}
+.a13{animation:ka13 6s step-end infinite;}
+@keyframes ka14{0%{opacity:0}51.667%{opacity:1}93.333%{opacity:0}100%{opacity:0}}
+.a14{animation:ka14 6s step-end infinite;}
+@keyframes ka15{0%{opacity:0}38.333%{opacity:1}51.667%{opacity:0}100%{opacity:0}}
+.a15{animation:ka15 6s step-end infinite;}
+@keyframes ka16{0%{opacity:0;transform:scale(.8)}35.833%{opacity:0;transform:scale(.8)}38.333%{opacity:1;transform:scale(1)}46.667%{opacity:0;transform:scale(1.6)}100%{opacity:0;transform:scale(1.6)}}
+.a16{animation:ka16 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka17{0%{opacity:0;transform:scale(.8)}49.167%{opacity:0;transform:scale(.8)}51.667%{opacity:1;transform:scale(1)}60%{opacity:0;transform:scale(1.6)}100%{opacity:0;transform:scale(1.6)}}
+.a17{animation:ka17 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ka18{0%{opacity:0}52.5%{opacity:0}55.833%{opacity:1}93.333%{opacity:1}98.333%{opacity:0}100%{opacity:0}}
+.a18{animation:ka18 6s ease-in-out infinite;}
+@keyframes ka19{0%{opacity:0;transform:scale(.3)}54.167%{opacity:0;transform:scale(.3)}56.667%{opacity:1;transform:scale(1.3)}60%{opacity:1;transform:scale(1)}93.333%{opacity:1;transform:scale(1)}98.333%{opacity:0;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.a19{animation:ka19 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:reduce){*{animation-delay:-4s!important;animation-play-state:paused!important}}
+.card{fill:var(--card);stroke:var(--border)}
+.lane{fill:none;stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.char{fill:var(--surface);stroke:var(--border-strong);stroke-width:2}
+.mob{fill:var(--muted)}
+.mob.angry{fill:var(--warning)}
+.eye{fill:var(--bg)}
+.lid{fill:none;stroke:var(--bg);stroke-width:2.2;stroke-linecap:round}
+.zz{fill:var(--violet)}
+.chip{fill:var(--surface);stroke-width:2}
+.chip.hit{stroke:var(--accent)}
+.chip.sleep{stroke:var(--violet)}
+.num.hit{fill:var(--accent)}
+.num.sleep{fill:var(--violet)}
+.numtext{fill:var(--bg)}
+.chiptext{fill:var(--fg)}
+.clash{fill:none;stroke:var(--warning);stroke-width:2.5}
+.badge-bad{fill:var(--warning)}
+.badge-ok{fill:var(--success)}
+.badge-text{fill:var(--bg)}
+.tick{fill:none;stroke:var(--bg);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.pulse-hit{fill:none;stroke:var(--accent);stroke-width:3}
+.pulse-sleep{fill:none;stroke:var(--violet);stroke-width:3}
+.moon{fill:var(--violet)}
+.alarm{fill:var(--warning)}
+.alarm-mark{stroke:var(--bg);stroke-width:2.6;stroke-linecap:round}
+.title{fill:var(--fg)}
+.label{fill:var(--faint)}
+.text{fill:var(--fg)}
+.ok{fill:var(--success)}
+</style>
+<rect class="card" x="16.5" y="16.5" width="279" height="407" rx="14"/>
+<rect class="card" x="304.5" y="16.5" width="319" height="407" rx="14"/>
+<text class="h title" x="36" y="54" font-size="24">Обычная сборка</text>
+<text class="h title" x="324" y="54" font-size="24">Zero-Tick</text>
+<text class="t label" x="36" y="90" font-size="22">поток 1 · маг</text>
+<text class="t label" x="36" y="246" font-size="22">поток 2 · воин</text>
+<path class="lane" d="M36 116H180L240 166M36 216H180L240 166"/>
+<circle class="clash a8" cx="240" cy="166" r="37"/>
+<circle class="char" cx="240" cy="166" r="30"/><g class="a3"><path class="mob" d="M222 181C218 162 226 150 240 150C254 150 262 162 258 181ZM229 153l-5-9l10 5zM251 153l5-9l-10 5z"/><g class="eye"><circle cx="234" cy="163" r="2.6"/><circle cx="246" cy="163" r="2.6"/></g><path class="eye" d="M233 171l2.5 5l2.5-5zM242 171l2.5 5l2.5-5z"/></g><g class="a4"><path class="mob" d="M222 181C218 162 226 150 240 150C254 150 262 162 258 181ZM229 153l-5-9l10 5zM251 153l5-9l-10 5z"/><path class="lid" d="M231 162q3 3 6 0M243 162q3 3 6 0"/><text class="t zz" x="196" y="152" font-size="22">zz</text></g><g class="a5"><path class="mob angry" d="M222 181C218 162 226 150 240 150C254 150 262 162 258 181ZM229 153l-5-9l10 5zM251 153l5-9l-10 5z"/><g class="eye"><circle cx="234" cy="163" r="2.6"/><circle cx="246" cy="163" r="2.6"/></g><path class="eye" d="M233 171l2.5 5l2.5-5zM242 171l2.5 5l2.5-5z"/><path class="lid" d="M230 155l7 4M250 155l-7 4"/></g>
+<g class="a1"><rect class="chip sleep" x="36" y="99.0" width="69" height="34" rx="17.0"/><text class="t chiptext" x="50" y="123.5" font-size="22">Сон</text></g><g class="a2"><rect class="chip hit" x="36" y="199.0" width="79" height="34" rx="17.0"/><text class="t chiptext" x="50" y="223.5" font-size="22">удар</text></g>
+<g class="a9"><circle class="badge-bad" cx="264" cy="140" r="14"/><text class="h badge-text" x="264" y="148" font-size="22" text-anchor="middle">?</text></g>
+<g class="a10">
+<text class="t label" x="36" y="300" font-size="22">итог</text>
+<g class="a6"><path class="moon" d="M49 320a9 9 0 1 0 6 15a7 7 0 0 1-6-15z"/><text class="t text" x="66" y="338" font-size="22">моб уснул</text></g>
+<g class="a7"><circle class="alarm" cx="46" cy="366" r="10"/><path class="alarm-mark" d="M46 360v6M46 371v.5"/><text class="t text" x="66" y="374" font-size="22">моб проснулся,</text><text class="t label" x="66" y="402" font-size="22">сон впустую</text></g>
+</g>
+<text class="t label" x="324" y="132" font-size="22">поток партиции</text>
+<path class="lane" d="M324 166H554"/>
+<circle class="pulse-hit a16" cx="584" cy="166" r="34"/>
+<circle class="pulse-sleep a17" cx="584" cy="166" r="34"/>
+<circle class="char" cx="584" cy="166" r="30"/><g class="a13"><path class="mob" d="M566 181C562 162 570 150 584 150C598 150 606 162 602 181ZM573 153l-5-9l10 5zM595 153l5-9l-10 5z"/><g class="eye"><circle cx="578" cy="163" r="2.6"/><circle cx="590" cy="163" r="2.6"/></g><path class="eye" d="M577 171l2.5 5l2.5-5zM586 171l2.5 5l2.5-5z"/></g><g class="a14"><path class="mob" d="M566 181C562 162 570 150 584 150C598 150 606 162 602 181ZM573 153l-5-9l10 5zM595 153l5-9l-10 5z"/><path class="lid" d="M575 162q3 3 6 0M587 162q3 3 6 0"/><text class="t zz" x="540" y="152" font-size="22">zz</text></g><g class="a15"><path class="mob angry" d="M566 181C562 162 570 150 584 150C598 150 606 162 602 181ZM573 153l-5-9l10 5zM595 153l5-9l-10 5z"/><g class="eye"><circle cx="578" cy="163" r="2.6"/><circle cx="590" cy="163" r="2.6"/></g><path class="eye" d="M577 171l2.5 5l2.5-5zM586 171l2.5 5l2.5-5z"/><path class="lid" d="M574 155l7 4M594 155l-7 4"/></g>
+<g class="a11"><rect class="chip hit" x="324" y="149.0" width="111" height="34" rx="17.0"/><circle class="num hit" cx="343" cy="166" r="13"/><text class="h numtext" x="343" y="173.5" font-size="22" text-anchor="middle">1</text><text class="t chiptext" x="362" y="173.5" font-size="22">удар</text></g><g class="a12"><rect class="chip sleep" x="324" y="149.0" width="101" height="34" rx="17.0"/><circle class="num sleep" cx="343" cy="166" r="13"/><text class="h numtext" x="343" y="173.5" font-size="22" text-anchor="middle">2</text><text class="t chiptext" x="362" y="173.5" font-size="22">Сон</text></g>
+<g class="a19"><circle class="badge-ok" cx="606" cy="140" r="14"/><path class="tick" d="M599 140l5 5l9-10"/></g>
+<g class="a18">
+<text class="t label" x="324" y="300" font-size="22">итог</text>
+<path class="moon" d="M337 320a9 9 0 1 0 6 15a7 7 0 0 1-6-15z"/><text class="t ok" x="354" y="338" font-size="22">моб уснул</text>
+<text class="t label" x="324" y="374" font-size="22">Всегда один исход</text>
+</g>
+</svg>

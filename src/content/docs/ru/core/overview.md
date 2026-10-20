@@ -3,9 +3,11 @@ title: Обзор
 description: Что такое nx-l2, что в нём есть сейчас и куда он движется.
 ---
 
-nx-l2 — сервер Lineage 2 с открытым исходным кодом на основе [L2J Mobius](https://gitlab.com/MobiusDevelopment/L2J_Mobius)
+L2NX Core — сервер Lineage 2 с открытым исходным кодом (репозиторий `nx-l2`) на основе [L2J Mobius](https://gitlab.com/MobiusDevelopment/L2J_Mobius)
 со встроенной интеграцией с платформой L2NX. В одном репозитории лежат все хроники, сервер логина, сетевой стек и общие
 библиотеки.
+
+Его игровой цикл — [Zero-Tick Engine](/ru/core/zero-tick-engine/): мир реагирует на события, а не тикает.
 
 У проекта три задачи:
 

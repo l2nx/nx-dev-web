@@ -67,6 +67,9 @@ so no locking or hand-off protocol between partitions is needed beyond moving an
 
 ## The partition loop
 
+The loop described here is the [Zero-Tick Engine](/core/zero-tick-engine/); its page shows how it works, with
+benchmarks and a comparison with other builds.
+
 Each partition is an event loop, not a fixed-rate tick. It sleeps until the earliest of three things: a message in
 its inbox, the next timer deadline, the next due periodic system.
 
