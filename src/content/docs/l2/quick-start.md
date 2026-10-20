@@ -17,6 +17,10 @@ matches the defaults of both servers (`spring.datasource.*`): user `l2nx`, passw
 machine only; change the password before you expose the database anywhere else, and set the same one for the servers in
 `config/application.yaml` (see [operations](/l2/operations/)). The database moves to PostgreSQL at stage 3.
 
+The schema is applied only when the volume is created. After you pull a change to `datapack/sql/*.sql` (the skill
+and item reuse columns changed with the game clock), recreate the database with `docker compose down -v` and
+`docker compose up -d`; this deletes the local data.
+
 ## Servers
 
 ```sh

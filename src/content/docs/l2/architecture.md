@@ -30,7 +30,7 @@ tick models, mature MMO server cores, ECS, spatial scaling and persistence, is o
 ```mermaid
 flowchart LR
   subgraph IO[network threads]
-    C[client codec] --> SQ[per-session queues]
+    C[protocol adapter] --> SQ[per-session queues]
   end
   SQ --> W
   SQ --> I
@@ -122,12 +122,16 @@ sent once per pass instead of twenty times, which matters most in sieges.
 ## Replication
 
 Sending state to clients is a separate phase after the simulation. Simulation code never writes to sockets; it records
-what happened, and the replication phase turns it into packets.
+what happened as view events, and the replication phase routes them to the sessions that see the object.
+
+- **The game knows no protocol.** It takes commands and emits view events through ports. A client protocol is an
+  adapter that maps packets to commands and view events to packets, so supporting another client version adds
+  mappers, not game code.
 
 - **Exact client view.** Each session keeps the set of objects currently shown on its client, so a client can neither
   keep a phantom object nor miss one. Visibility is recomputed only for entities that crossed a grid cell; objects
   that stand still cost nothing.
-- **Coalescing and budgets.** Several HP changes in one pass become one update. Packets are classed as critical
+- **Coalescing and budgets.** Several HP changes in one pass become one update. Events are classed as critical
   (always sent, in order), state (latest value per pass) and cosmetic (dropped first). A byte budget per connection,
   with priority for the player's target, party and attackers, keeps a siege with hundreds of players within network
   limits.
@@ -178,7 +182,7 @@ feeds the replication phase directly.
   partitions, identity, sessions, replication and persistence. Game mechanics shared by chronicles move into `engine/`
   only when a second chronicle proves them identical.
 - **Chronicle code is cut by feature,** not by technical layer: `combat`, `skill`, `effect`, `item`, `trade`, `clan`,
-  `siege`, `olympiad` and so on. A slice owns its components and systems, its data, its packets, its tables and its
+  `siege`, `olympiad` and so on. A slice owns its components and systems, its data, its commands and view events, its tables and its
   settings. Catch-all packages such as `managers` and `util` dissolve into slices. Slice boundaries are verified by a
   test. See the [overview](/l2/overview/) for the repository layout.
 
@@ -186,22 +190,22 @@ feeds the replication phase directly.
 
 The Mobius code is moved to this architecture in steps. Each step ships on its own, ends with a playable server and is
 accepted by a bot load test that includes a siege; until the bots exist, by its metrics and play with a real client.
-Scripts keep calling the same facades at every step.
+Scripts keep calling facades at every step.
 
-| #   | Step                                                                                          |
-| --- | --------------------------------------------------------------------------------------------- |
-| 0   | Bot load harness: headless clients with login, movement, PvE, PvP and siege scenarios         |
-| 1   | Metrics: a baseline of the current execution first, then pass time per partition and phase    |
-| 2   | Identity: UUIDv7 keys in the PostgreSQL schema, wire-handle allocator                         |
-| 3   | Value transactions, ledger, operation ids, outbox                                             |
-| 4   | Database access off game threads, write-behind                                                |
-| 5   | Injected clock and random generator, behaviour unchanged                                      |
-| 6   | The open world as a single writer: session queues, every world task routed into its inbox     |
-| 7   | Subsystems moved to partition deadlines one at a time: effects, combat, casting, AI, movement |
-| 8   | Replication phase                                                                             |
-| 9   | Global services; instances and olympiad matches as their own partitions                       |
-| 10  | Packages reworked by feature slice, alongside steps 6 to 9                                    |
-| 11  | Data-oriented storage on the hot paths the profiler shows                                     |
+| #   | Step                                                                                                |
+| --- | --------------------------------------------------------------------------------------------------- |
+| 0   | Bot load harness: headless clients with login, movement, PvE, PvP and siege scenarios               |
+| 1   | Metrics: a baseline of the current execution first, then pass time per partition and phase          |
+| 2   | Identity: UUIDv7 keys in the PostgreSQL schema, wire-handle allocator, with the PostgreSQL move     |
+| 3   | Value transactions, ledger, operation ids, outbox                                                   |
+| 4   | Database access off game threads, write-behind                                                      |
+| 5   | Clock and random generator as inputs; monotonic game time                                           |
+| 6   | The open world as a single writer: it drains the session queues, every world task goes to its inbox |
+| 7   | Subsystems moved to partition deadlines one at a time: effects, combat, casting, AI, movement       |
+| 8   | Replication phase; world state reaches clients as view events                                       |
+| 9   | Global services; instances and olympiad matches as their own partitions                             |
+| 10  | Packages reworked by feature slice, alongside steps 6 to 9; packets become commands and view events |
+| 11  | Data-oriented storage on the hot paths the profiler shows                                           |
 
 Step 6 carries the main risk: legacy code running on one thread may not fit the budget. The metrics of step 1 measure
 it before step 6 lands, and an overrun is fixed by profiling, not by going back to shared thread pools.
