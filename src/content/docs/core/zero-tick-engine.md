@@ -50,14 +50,14 @@ A past fight can be replayed step by step: time and randomness come only from th
 
 ## Zero-Tick vs classic builds
 
-| Feature                              | Zero-Tick | L2J Mobius | aCis | L2J Server | L2-Scripts line | L2E (Elixir) | Rust rewrite |
-| ------------------------------------ | :-------: | :--------: | :--: | :--------: | :-------------: | :----------: | :----------: |
-| Wakes only on events, no polling     |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |      ✗       |
-| No locks on game state, one writer   |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✓       |      —       |
-| Dupe-proof by design                 |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      —       |      —       |
-| Deterministic replay                 |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |      ✗       |
-| Built-in Prometheus metrics          |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |      ✗       |
-| Pass budget with per-phase breakdown |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |      ✗       |
+| Feature                              | Zero-Tick | L2J Mobius | aCis | L2J Server | L2-Scripts line | L2E (Elixir) |
+| ------------------------------------ | :-------: | :--------: | :--: | :--------: | :-------------: | :----------: |
+| Wakes only on events, no polling     |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
+| No locks on game state, one writer   |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✓       |
+| Dupe-proof by design                 |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      —       |
+| Deterministic replay                 |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
+| Built-in Prometheus metrics          |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
+| Pass budget with per-phase breakdown |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 
 By the public source code of each family; ✓ yes, ✗ no, — not established. The facts behind every cell are in the
 [detailed comparison](#detailed-comparison) under the hood.
@@ -213,7 +213,6 @@ Run one scheduler per JVM with `scheduler=ZERO_TICK`, `MOBIUS_STPE` or `TICK_100
 | L2jFrozen-style Interlude forks | the L2J design: effects, general and AI pools plus packet pools                                         | timer thread 10 ticks/s, AI 1000 ms                                                                                    | `synchronized`                                            | pool dumps, deadlock detector             | none                                    |
 | L2-Scripts line                 | a scheduled pool (4 threads per CPU) plus a worker pool, a stepping AI task manager                     | AI step 250 ms, NPC AI delay 1000 ms                                                                                   | `ReentrantLock` and `synchronized`                        | telnet status and pool dumps              | none                                    |
 | L2E (Elixir)                    | a process per entity, `send_after` timers, message passing                                              | regeneration every 3 s                                                                                                 | none: no shared state                                     | none                                      | `:rand` without a seed                  |
-| Rust rewrite                    | async per-client tasks on tokio                                                                         | 300 ms interval                                                                                                        | async tasks                                               | none                                      | none                                    |
 
 No public tree of these families exports Micrometer, Prometheus or OpenTelemetry metrics, and none logs a seed or
 replays a session.
