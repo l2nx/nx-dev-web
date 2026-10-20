@@ -28,7 +28,7 @@ tick models, mature MMO server cores, ECS, spatial scaling and persistence, is o
 ## Overall flow
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph IO[network threads]
     C[protocol adapter] --> SQ[per-session queues]
   end
