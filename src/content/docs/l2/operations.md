@@ -4,15 +4,16 @@ description: Configure, monitor, containerize and restart the nx-l2 login and ga
 ---
 
 Both servers run on Spring Boot. This page covers what an operator sets and watches. The login settings are
-`l2nx.login.*` keys of `application.yaml`; the game settings stay in the `.ini` files of `config/`.
+`l2nx.login.*` keys of `application.yaml`, its network settings `l2nx.network.*`; the game settings stay in the `.ini`
+files of `config/`.
 
 ## Configuration
 
-| Where                     | What                                                                   |
-| ------------------------- | ---------------------------------------------------------------------- |
-| `config/*.ini`            | game settings, thread pool sizes, client ports (game server only)      |
-| `config/application.yaml` | database, management port and address, logging, `l2nx.login.*` (login) |
-| environment variables     | override the Spring Boot keys of the file and of the built-in defaults |
+| Where                     | What                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `config/*.ini`            | game settings, thread pool sizes, client ports (game server only)                        |
+| `config/application.yaml` | database, management port and address, logging, `l2nx.login.*`, `l2nx.network.*` (login) |
+| environment variables     | override the Spring Boot keys of the file and of the built-in defaults                   |
 
 `config/application.yaml` sits in the distribution (next to the `.ini` files of the game server); Spring Boot reads it without extra flags and
 it overrides the built-in defaults. Environment variables win over the file: `SPRING_DATASOURCE_URL`,
@@ -33,6 +34,25 @@ The user and the schema are set per server: `l2nx_login` and `login` for the log
 the game server (`spring.datasource.username`, `l2nx.database.schema`). The pool holds 5 connections on the login
 server and 100 on the game server (`spring.datasource.hikari.maximum-pool-size`). The default password is for local
 development only: set your own before the database is reachable from anywhere else.
+
+The login server listens on one port per client protocol variant (`l2nx.login.client.ports`, a list of
+`{port, variant}`; the shipped one is `2106` for `c621`, High Five clients). Its blocking work (decrypting the
+credentials, the account lookup, the password check) runs at most `l2nx.login.client.max-concurrent-tasks` tasks at
+once across all connections (default `32`); the others wait their turn. Its network limits and timeouts are
+`l2nx.network.*`; the defaults suit a public server:
+
+| Key                                     | Default | Meaning                                                            |
+| --------------------------------------- | ------- | ------------------------------------------------------------------ |
+| `l2nx.network.transport`                | `auto`  | `auto` (epoll on Linux, NIO elsewhere), `epoll`, `nio`, `io-uring` |
+| `l2nx.network.max-frame`                | `16KB`  | largest packet a client may send                                   |
+| `l2nx.network.read-timeout`             | `120s`  | silence before the login is authenticated that closes a connection |
+| `l2nx.network.connections-per-ip`       | `10`    | concurrent connections from one address                            |
+| `l2nx.network.accept-per-ip-per-second` | `5`     | new connections per second from one address                        |
+| `l2nx.network.max-connections`          | `10000` | concurrent connections per server                                  |
+| `l2nx.network.outbound-limit`           | `1MB`   | unsent data per connection before it is closed                     |
+
+After authentication a login session is no longer bound by `read-timeout`: it stays open for at most 5 minutes in
+total, then the server closes it.
 
 ## Database
 
@@ -99,7 +119,8 @@ curl -s -X POST -H 'Content-Type: application/json' -d '{"configuredLevel":"DEBU
 ```
 
 Metrics are the standard Spring Boot ones (JVM, process, system, log events, `hikaricp.*`, `tomcat.*`, `executor.*`
-for the thread pools), tagged with `application`, plus `l2nx.players.online`.
+for the thread pools), tagged with `application`, plus `l2nx.network.*` (connections, bytes, drops, closes by reason)
+and `l2nx.players.online`.
 
 ## Logs
 
