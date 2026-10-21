@@ -118,6 +118,7 @@ export default defineConfig({
             'core/operations',
             'core/architecture',
             'core/engine-research',
+            'core/glossary',
             'core/licensing',
           ],
         },
