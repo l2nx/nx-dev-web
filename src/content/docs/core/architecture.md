@@ -226,7 +226,7 @@ interface named `<Edge>Port`. A repository is a plain class: there is one databa
 ### Checked on every build
 
 A test runs Spring Modulith's verification over the migrated slices (no cycles, no access to another slice's
-internals) and ArchUnit rules for the layout: the fixed package names, where commands, handlers and events may live,
+internals) and ArchUnit rules for the layout: the fixed package names, where commands, handlers and events may live (checked by their marker types),
 ports as interfaces only, no slice depending on the network layer. Rules the imported code still breaks are frozen:
 the build fails on any new violation, and the list of old ones only shrinks.
 

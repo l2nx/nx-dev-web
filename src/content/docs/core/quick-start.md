@@ -41,8 +41,8 @@ The login server accepts clients on port `2106`. The game server registers on it
 [operations](/core/operations/#login-and-game-server-link)) and accepts clients on port `7777`.
 Accounts are created on the first login (`l2nx.login.auto-create-accounts` in the login `application.yaml`).
 
-High Five clients with protocol revisions 267, 268, 271 and 273 are accepted (`AllowedProtocolRevisions` in the game
-`Server.ini`).
+High Five clients with protocol revisions 267, 268, 271 and 273 are accepted; the set belongs to the `highfive`
+protocol adapter and has no setting.
 
 ## Distributions
 

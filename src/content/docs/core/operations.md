@@ -4,16 +4,16 @@ description: Configure, monitor, containerize and restart the nx-l2 login and ga
 ---
 
 Both servers run on Spring Boot. This page covers what an operator sets and watches. The login settings are
-`l2nx.login.*` keys of `application.yaml`, its network settings `l2nx.network.*`, the link between the servers
-`spring.grpc.*` and `l2nx.gslink.*`; the game settings stay in the `.ini` files of `config/`.
+`l2nx.login.*` keys of `application.yaml`, the network settings of both servers `l2nx.network.*`, the link between
+the servers `spring.grpc.*` and `l2nx.gslink.*`; the game settings stay in the `.ini` files of `config/`.
 
 ## Configuration
 
-| Where                     | What                                                                                                                                     |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `config/*.ini`            | game settings, thread pool sizes, client ports (game server only)                                                                        |
-| `config/application.yaml` | database, management port and address, logging, `l2nx.login.*`, `l2nx.network.*` (login), the GS-link (`spring.grpc.*`, `l2nx.gslink.*`) |
-| environment variables     | override the Spring Boot keys of the file and of the built-in defaults                                                                   |
+| Where                     | What                                                                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `config/*.ini`            | game settings, thread pool sizes, client ports (game server only)                                                                |
+| `config/application.yaml` | database, management port and address, logging, `l2nx.login.*`, `l2nx.network.*`, the GS-link (`spring.grpc.*`, `l2nx.gslink.*`) |
+| environment variables     | override the Spring Boot keys of the file and of the built-in defaults                                                           |
 
 `config/application.yaml` sits in the distribution (next to the `.ini` files of the game server); Spring Boot reads it without extra flags and
 it overrides the built-in defaults. Environment variables win over the file: `SPRING_DATASOURCE_URL`,
@@ -38,18 +38,33 @@ development only: set your own before the database is reachable from anywhere el
 The login server listens on one port per client protocol variant (`l2nx.login.client.ports`, a list of
 `{port, variant}`; the shipped one is `2106` for `c621`, High Five clients). Its blocking work (decrypting the
 credentials, the account lookup, the password check) runs at most `l2nx.login.client.max-concurrent-tasks` tasks at
-once across all connections (default `32`); the others wait their turn. Its network limits and timeouts are
-`l2nx.network.*`; the defaults suit a public server:
+once across all connections (default `32`); the others wait their turn.
 
-| Key                                     | Default | Meaning                                                            |
-| --------------------------------------- | ------- | ------------------------------------------------------------------ |
-| `l2nx.network.transport`                | `auto`  | `auto` (epoll on Linux, NIO elsewhere), `epoll`, `nio`, `io-uring` |
-| `l2nx.network.max-frame`                | `16KB`  | largest packet a client may send                                   |
-| `l2nx.network.read-timeout`             | `120s`  | silence before the login is authenticated that closes a connection |
-| `l2nx.network.connections-per-ip`       | `10`    | concurrent connections from one address                            |
-| `l2nx.network.accept-per-ip-per-second` | `5`     | new connections per second from one address                        |
-| `l2nx.network.max-connections`          | `10000` | concurrent connections per server                                  |
-| `l2nx.network.outbound-limit`           | `1MB`   | unsent data per connection before it is closed                     |
+Both servers take their network limits and timeouts from `l2nx.network.*`; a key marked "game server" applies to the
+game server only. The defaults suit a public server:
+
+| Key                                                       | Default          | Meaning                                                                                                                                             |
+| --------------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `l2nx.network.transport`                                  | `auto`           | `auto` (epoll on Linux, NIO elsewhere), `epoll`, `nio`, `io-uring`                                                                                  |
+| `l2nx.network.max-frame`                                  | `16KB`           | largest packet a client may send                                                                                                                    |
+| `l2nx.network.read-timeout`                               | `120s`           | silence that closes a connection before it is authenticated (game server: until the account is accepted)                                            |
+| `l2nx.network.handshake-timeout`                          | `10s`            | time from the connection to the protocol version (game server) or `AuthGameGuard` (login server)                                                    |
+| `l2nx.network.auth-timeout`                               | `60s`            | time from the connection to a completed login or game server authentication                                                                         |
+| `l2nx.network.ping-interval`                              | `30s`            | game server, once the account is accepted: silence that sends the client a ping                                                                     |
+| `l2nx.network.ping-misses`                                | `3`              | game server: unanswered pings in a row that close the connection                                                                                    |
+| `l2nx.network.inbound-queue-limit`                        | `256`            | game server: packets one client may have waiting; one more closes the connection                                                                    |
+| `l2nx.network.packets-per-second`                         | `200`            | game server: sustained packets per second from one client, at most `1000000000`; bursts up to `inbound-queue-limit`                                 |
+| `l2nx.network.packets-per-drain`                          | `16`             | game server: packets of one client run in one turn before other clients get theirs                                                                  |
+| `l2nx.network.max-concurrent-drains`                      | `32`             | game server: clients whose packets run at the same time                                                                                             |
+| `l2nx.network.decode-error-limit.count` / `.window`       | `10` / `60s`     | game server: malformed packets in the game, and failed packets at any stage, tolerated per client within the window before the connection is closed |
+| `l2nx.network.connections-per-ip`                         | `10`             | concurrent connections from one address                                                                                                             |
+| `l2nx.network.accept-per-ip-per-second`                   | `5`              | new connections per second from one address                                                                                                         |
+| `l2nx.network.max-connections`                            | `10000`          | concurrent connections per server                                                                                                                   |
+| `l2nx.network.outbound-limit`                             | `1MB`            | unsent data per connection before it is closed                                                                                                      |
+| `l2nx.network.worker-threads`                             | `0`              | event loop threads; `0` takes twice the available processors                                                                                        |
+| `l2nx.network.write-buffer-low` / `write-buffer-high`     | `32KB` / `128KB` | unsent data per connection above which the client counts as slow (`high`) and below which it recovers (`low`); see `slow-client-timeout`            |
+| `l2nx.network.slow-client-timeout`                        | `10s`            | how long a connection may stay over `write-buffer-high` before it is closed                                                                         |
+| `l2nx.network.shutdown-quiet-period` / `shutdown-timeout` | `2s` / `15s`     | on shutdown: quiet time before the event loops stop, and the most time clients get to receive the farewell                                          |
 
 After authentication a login session is no longer bound by `read-timeout`: it stays open for at most 5 minutes in
 total, then the server closes it.
@@ -191,6 +206,11 @@ loopback address. Do not publish the port to a public network.
 
 While the datapack loads, liveness is `UP` and readiness is `OUT_OF_SERVICE`; readiness turns `UP` when the server
 accepts clients. On shutdown it turns to refusing traffic first.
+
+Then every connected client is told before its connection closes: the game server sends the server-close message (also
+to players still on character selection), and the High Five client shows "You have been disconnected"; the login server
+sends a login failure with the maintenance reason, shown as "We are currently undergoing game server maintenance" on
+the login screen and on the server list. Clients get up to `l2nx.network.shutdown-timeout` (15 seconds) to receive it.
 
 ```sh
 curl -s http://127.0.0.1:8777/actuator/health/readiness
