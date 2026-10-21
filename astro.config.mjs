@@ -65,7 +65,8 @@ export default defineConfig({
     }),
     starlight({
       title: 'L2NX Dev Portal',
-      description: 'Developer documentation for the L2NX platform: game server adapter, l2nx.top, integration API.',
+      description:
+        'Developer documentation for the L2NX platform: L2NX Core, game server adapter, l2nx.top, integration API.',
       logo: { src: './src/assets/logo.png', alt: 'L2NX' },
       components: {
         SiteTitle: './src/components/SiteTitle.astro',
@@ -88,8 +89,20 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: 'Adapter',
-          translations: { ru: 'Адаптер' },
+          label: 'L2NX Core',
+          items: [
+            'core/overview',
+            'core/zero-tick-engine',
+            'core/quick-start',
+            'core/operations',
+            'core/architecture',
+            'core/engine-research',
+            'core/glossary',
+            'core/licensing',
+          ],
+        },
+        {
+          label: 'GS Adapter',
           items: [
             'adapter/overview',
             'adapter/quick-start',
@@ -106,21 +119,8 @@ export default defineConfig({
           ],
         },
         {
-          label: 'l2nx.top',
+          label: 'L2NX.TOP',
           items: ['top/overview', 'top/vote-link', 'top/webhooks', 'top/getting-access'],
-        },
-        {
-          label: 'L2NX Core',
-          items: [
-            'core/overview',
-            'core/zero-tick-engine',
-            'core/quick-start',
-            'core/operations',
-            'core/architecture',
-            'core/engine-research',
-            'core/glossary',
-            'core/licensing',
-          ],
         },
         {
           label: 'Integration API',
