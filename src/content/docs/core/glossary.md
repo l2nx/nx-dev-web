@@ -39,7 +39,8 @@ Answer the questions in order; the first "yes" decides the kind and the name.
 **Concept test.** An entity has an identity and a record, so one can point at "this X" (this clan, this door, this
 match); a concept has neither (there is no "this aggro" or "this pathfinding"). The procedure does not apply to
 concepts. Abstract levels of the object hierarchy that span several kinds (`world-object`, `creature`, `playable`) are
-concepts too.
+concepts too. The procedure names game-domain entities; runtime structures of the engine (partitions, passes, threads,
+timers) are concepts as well.
 
 ## Conventions
 
@@ -82,7 +83,7 @@ concepts too.
 | Game term               | Name used by players in English     |
 | Collisions              | Other meanings or conflicting names |
 
-The glossary has 243 terms in 10 areas; the collisions of widely reused words are collected at the end.
+The glossary has 250 terms in 10 areas; the collisions of widely reused words are collected at the end.
 
 ## 1. World objects and hierarchy
 
@@ -354,6 +355,13 @@ The glossary has 243 terms in 10 areas; the collisions of widely reused words ar
 | <a id="scheduled-task"></a>`scheduled-task` (concept)             | Periodic or delayed server task run by the scheduler.                                                                  | Mobius `*TaskManager`, `ThreadPool.schedule*`; L2J lineage `ThreadPoolManager`                                         | -                                                                                                  | -                        | -                                                                                                |
 | <a id="thread-pool"></a>`thread-pool` (concept)                   | Server thread pools and scheduler.                                                                                     | Mobius `ThreadPool`; L2J lineage `ThreadPoolManager`                                                                   | -                                                                                                  | -                        | -                                                                                                |
 | <a id="zero-tick-engine"></a>`zero-tick-engine` (concept) | Execution layer of this server (`engine/core`): game work runs as events on loop threads instead of fixed ticks — pass core, timer wheel, periodic systems, inbox. | Mobius and the L2J lineage: fixed-rate scheduled tasks on thread pools | - | - | "Loop core" is only an internal plan name; the docs name the layer Zero-Tick Engine. |
+| <a id="world-partition"></a>`world-partition` (concept) | Partition of the open world: all its world state, owned by one loop thread (spec 003, execution). | - | - | - | Zero-Tick Engine runtime structure. |
+| <a id="pass"></a>`pass` (concept) | One run of a partition loop: inbox, deadlines, periodic systems, side effects, replication, flush. | - | - | - | Zero-Tick Engine runtime structure. |
+| <a id="loop-thread"></a>`loop-thread` (concept) | Thread that runs the passes of the partitions pinned to it. | - | - | - | Zero-Tick Engine runtime structure. |
+| <a id="timer-handle"></a>`timer-handle` (concept) | Reference to a scheduled partition timer: cancel it, read the remaining time. | - | - | - | Zero-Tick Engine runtime structure. |
+| <a id="ownership-check"></a>`ownership-check` (concept) | Check that partition state is touched only by its loop thread. | - | - | - | Zero-Tick Engine runtime structure. |
+| <a id="startup-pass"></a>`startup-pass` (concept) | The pass that loads the world before the game port opens; not counted against the pass budget. | - | - | - | Zero-Tick Engine runtime structure. |
+| <a id="background-task"></a>`background-task` (concept) | Task without game state, run on the Spring task scheduler outside any partition. | - | - | - | Zero-Tick Engine runtime structure. |
 | <a id="script"></a>`script` (concept)                             | Game script: quest, AI or handler.                                                                                     | Mobius `ScriptEngine`; nx-l2 `ScriptCatalog`                                                                           | -                                                                                                  | -                        | Not a `quest`.                                                                                   |
 | <a id="daily-reset"></a>`daily-reset` (concept)                   | Daily and weekly reset of limits.                                                                                      | Mobius `DailyResetManager` (06:30)                                                                                     | -                                                                                                  | daily reset              | Reset time differs by build (06:30 or 06:00).                                                    |
 | <a id="announcement"></a>`announcement` (reference data)          | Server announcement.                                                                                                   | Mobius `Announcement`, `AutoAnnouncement`, `EventAnnouncement`; L2J lineage `Announcements`, `AutoAnnounceTaskManager` | `Say2` / `CreatureSay` (announce type), `ExShowScreenMessage`                                      | announcement             | -                                                                                                |

@@ -39,7 +39,8 @@ description: Одно имя для одной вещи в игровом сер
 **Тест на concept.** У сущности есть идентичность и запись, поэтому на неё можно указать: «этот X» (этот клан, эта
 дверь, этот матч); у concept нет ни того, ни другого (нет «этого aggro» или «этого pathfinding»). Процедура к concept не
 применяется. Абстрактные уровни иерархии объектов, охватывающие несколько видов (`world-object`, `creature`,
-`playable`), — тоже concept.
+`playable`), — тоже concept. Процедура именует сущности игрового домена; runtime-структуры движка (партиции, passes,
+потоки, таймеры) — тоже concept.
 
 ## Соглашения
 
@@ -83,7 +84,7 @@ description: Одно имя для одной вещи в игровом сер
 | Игровой термин            | Имя, которым пользуются игроки          |
 | Коллизии                  | Другие значения или конфликтующие имена |
 
-В глоссарии 243 термина в 10 областях; коллизии широко используемых слов собраны в конце.
+В глоссарии 250 терминов в 10 областях; коллизии широко используемых слов собраны в конце.
 
 ## 1. Объекты мира и иерархия
 
@@ -352,6 +353,13 @@ description: Одно имя для одной вещи в игровом сер
 | <a id="scheduled-task"></a>`scheduled-task` (concept)             | Периодическая или отложенная задача сервера, запускаемая планировщиком.                                                                                                           | Mobius `*TaskManager`, `ThreadPool.schedule*`; линия L2J `ThreadPoolManager`                                         | -                                                                                                  | -                   | -                                                                                               |
 | <a id="thread-pool"></a>`thread-pool` (concept)                   | Пулы потоков сервера и планировщик.                                                                                                                                               | Mobius `ThreadPool`; линия L2J `ThreadPoolManager`                                                                   | -                                                                                                  | -                   | -                                                                                               |
 | <a id="zero-tick-engine"></a>`zero-tick-engine` (concept)         | Слой исполнения этого сервера (`engine/core`): игровая работа идёт как события на loop-потоках вместо фиксированных тиков — pass core, timer wheel, периодические системы, inbox. | Mobius и линия L2J: запланированные задачи с фиксированной частотой на пулах потоков                                 | -                                                                                                  | -                   | «Loop core» — лишь внутреннее имя плана; в документации этот слой называется Zero-Tick Engine.  |
+| <a id="world-partition"></a>`world-partition` (concept) | Партиция открытого мира: всё её состояние мира, им владеет один loop thread (spec 003, execution). | - | - | - | Runtime-структура Zero-Tick Engine. |
+| <a id="pass"></a>`pass` (concept) | Один проход цикла партиции: inbox, дедлайны, periodic systems, побочные эффекты, репликация, flush. | - | - | - | Runtime-структура Zero-Tick Engine. |
+| <a id="loop-thread"></a>`loop-thread` (concept) | Поток, который выполняет passes закреплённых за ним партиций. | - | - | - | Runtime-структура Zero-Tick Engine. |
+| <a id="timer-handle"></a>`timer-handle` (concept) | Ссылка на запланированный таймер партиции: отменить, узнать оставшееся время. | - | - | - | Runtime-структура Zero-Tick Engine. |
+| <a id="ownership-check"></a>`ownership-check` (concept) | Проверка, что состояние партиции трогает только её loop thread. | - | - | - | Runtime-структура Zero-Tick Engine. |
+| <a id="startup-pass"></a>`startup-pass` (concept) | Pass, который загружает мир до открытия игрового порта; в бюджет pass не засчитывается. | - | - | - | Runtime-структура Zero-Tick Engine. |
+| <a id="background-task"></a>`background-task` (concept) | Задача без игрового состояния, выполняется на task scheduler Spring вне партиций. | - | - | - | Runtime-структура Zero-Tick Engine. |
 | <a id="script"></a>`script` (concept)                             | Игровой скрипт: квест, AI или обработчик.                                                                                                                                         | Mobius `ScriptEngine`; nx-l2 `ScriptCatalog`                                                                         | -                                                                                                  | -                   | Не `quest`.                                                                                     |
 | <a id="daily-reset"></a>`daily-reset` (concept)                   | Ежедневный и еженедельный сброс лимитов.                                                                                                                                          | Mobius `DailyResetManager` (06:30)                                                                                   | -                                                                                                  | ежедневный сброс    | Время сброса различается по сборкам (06:30 или 06:00).                                          |
 | <a id="announcement"></a>`announcement` (reference data)          | Объявление сервера.                                                                                                                                                               | Mobius `Announcement`, `AutoAnnouncement`, `EventAnnouncement`; линия L2J `Announcements`, `AutoAnnounceTaskManager` | `Say2` / `CreatureSay` (тип announce), `ExShowScreenMessage`                                       | объявление          | -                                                                                               |
