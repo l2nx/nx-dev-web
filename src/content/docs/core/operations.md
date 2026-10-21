@@ -67,7 +67,8 @@ game server only. The defaults suit a public server:
 | `l2nx.network.shutdown-quiet-period` / `shutdown-timeout` | `2s` / `15s`     | on shutdown: quiet time before the event loops stop, and the most time clients get to receive the farewell                                          |
 
 After authentication a login session is no longer bound by `read-timeout`: it stays open for at most 5 minutes in
-total, then the server closes it.
+total, then the server tells the client the session has expired and closes it, so the client returns to the login
+screen.
 
 ## Login and game server link
 
