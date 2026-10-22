@@ -5,8 +5,8 @@ description: The target architecture of the nx-l2 game engine, its principles an
 
 This page describes the architecture the nx-l2 game engine is moving towards: how the simulation runs, how game
 objects are modelled, how state reaches clients and the database, and the order in which the imported L2J Mobius code
-gets there. **It is the target being built, not what the server does today.** Today the server still runs the Mobius
-threading model; the [migration path](#migration-path) below shows how it changes step by step.
+gets there. **It is the target being built, not everything the server does today.** The open world already runs as a single
+writer on its own loop; the [migration path](#migration-path) below shows what is done and what remains.
 
 The decisions were taken in [issue #18](https://github.com/l2nx/nx-l2/issues/18). The research behind them, covering
 tick models, mature MMO server cores, ECS, spatial scaling and persistence, is on the
@@ -251,5 +251,8 @@ Scripts keep calling facades at every step.
 | 10  | Packages reworked by feature slice, alongside steps 6 to 9; packets become commands and view events |
 | 11  | Data-oriented storage on the hot paths the profiler shows                                           |
 
-Step 6 carries the main risk: legacy code running on one thread may not fit the budget. The metrics of step 1 measure
-it before step 6 lands, and an overrun is fixed by profiling, not by going back to shared thread pools.
+Step 6 carries the main risk: legacy code running on one thread may not fit the budget. Its cutover is in place: the
+world loop drains the session queues, loads the world in its startup pass before the game port opens, and runs every
+game timer; the Mobius `ThreadPool` is gone, and work without game state runs on a Spring task scheduler. The legacy
+database calls still run on the world loop until step 4. The step is accepted by the bot crowd PvP load run, and an
+overrun is fixed by profiling, not by going back to shared thread pools.

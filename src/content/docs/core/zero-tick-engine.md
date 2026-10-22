@@ -282,12 +282,11 @@ replays a session.
 
 - **Open work:**
   - input ordered against due timers by arrival time ([#45](https://github.com/l2nx/nx-l2/issues/45));
-  - replay recording in production ([#44](https://github.com/l2nx/nx-l2/issues/44));
-  - runtime start between data load and port open ([#43](https://github.com/l2nx/nx-l2/issues/43)).
-- **The world still runs on the imported Mobius threading model** while it migrates onto Zero-Tick. The
-  [migration path](/core/architecture/#migration-path) shows the order: the open world becomes a single writer first,
-  then subsystems move to partition deadlines one at a time, and instances and olympiad matches get their own
-  partitions.
+  - replay recording in production ([#44](https://github.com/l2nx/nx-l2/issues/44)).
+- **The open world is a single writer on the world loop** and all its game timers run on the loop API, but the
+  imported Mobius subsystems still schedule their own work as fixed-rate tasks. The
+  [migration path](/core/architecture/#migration-path) shows the rest of the order: subsystems move to partition
+  deadlines one at a time, and instances and olympiad matches get their own partitions.
 
 ## Read more
 

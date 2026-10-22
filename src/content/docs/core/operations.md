@@ -11,7 +11,7 @@ the servers `spring.grpc.*` and `l2nx.gslink.*`; the game settings stay in the `
 
 | Where                     | What                                                                                                                             |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `config/*.ini`            | game settings, thread pool sizes, client ports (game server only)                                                                |
+| `config/*.ini`            | game settings, client ports (game server only)                                                                                   |
 | `config/application.yaml` | database, management port and address, logging, `l2nx.login.*`, `l2nx.network.*`, the GS-link (`spring.grpc.*`, `l2nx.gslink.*`) |
 | environment variables     | override the Spring Boot keys of the file and of the built-in defaults                                                           |
 
@@ -179,17 +179,41 @@ and the same for `login`. PostgreSQL warns about a collation version mismatch in
 The game server runs the world on partition loops. The `l2nx.engine.*` keys of `application.yaml` tune them; the
 defaults are starting points to be tuned under load.
 
-| Key                               | Default | Meaning                                                                     |
-| --------------------------------- | ------- | --------------------------------------------------------------------------- |
-| `l2nx.engine.pass-min`            | `5ms`   | minimum gap between passes run for input; due timers and systems never wait |
-| `l2nx.engine.pass-budget`         | `50ms`  | a longer pass is counted and logged with its phase breakdown                |
-| `l2nx.engine.trigger-depth`       | `8`     | generations of same-pass follow-up work drained in one pass                 |
-| `l2nx.engine.packets-per-pass`    | `16`    | items one ready input source gives per pass                                 |
-| `l2nx.engine.overdue-per-pass`    | `4096`  | overdue timers one wheel fires per pass; the rest waits for the next pass   |
-| `l2nx.engine.owed-ticks-per-pass` | `10`    | ticks one late periodic task catches up per pass                            |
+| Key                                | Default       | Meaning                                                                                                         |
+| ---------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
+| `l2nx.engine.pass-min`             | `5ms`         | minimum gap between passes run for input; due timers and systems never wait                                     |
+| `l2nx.engine.pass-budget`          | `50ms`        | a longer pass is counted and logged with its phase breakdown                                                    |
+| `l2nx.engine.trigger-depth`        | `8`           | generations of same-pass follow-up work drained in one pass                                                     |
+| `l2nx.engine.packets-per-pass`     | `16`          | items one ready input source gives per pass                                                                     |
+| `l2nx.engine.overdue-per-pass`     | `4096`        | overdue timers one wheel fires per pass; the rest waits for the next pass                                       |
+| `l2nx.engine.owed-ticks-per-pass`  | `10`          | ticks one late periodic task catches up per pass                                                                |
+| `l2nx.engine.blocked-pass-warning` | `2s`          | a longer pass gets the loop thread's stack logged, once per multiple                                            |
+| `l2nx.engine.blocked-pass-exit`    | not set (off) | a pass running longer exits the server so its supervisor restarts it; set it longer than `blocked-pass-warning` |
 
 Durations are whole milliseconds, at least `1ms`; counts are positive. A wrong value stops the server at startup.
 Stopping the loops is bounded by the standard `spring.lifecycle.timeout-per-shutdown-phase` (30 seconds by default).
+
+A watchdog thread checks the running pass every 500 ms. A pass that never ends (an endless loop in a script) freezes
+the world, and the world cannot save from a frozen loop: `blocked-pass-exit` gives up the changes since the last save
+for availability, which is why it is off by default. The exit stops the server in order, and the frozen loop holds that
+stop for at most `timeout-per-shutdown-phase`. While the server stops, a blocked pass (a save stuck on the database)
+still gets its stack logged, but it never triggers the exit. The startup pass that loads the world is not watched.
+
+### Background tasks (game server)
+
+Work that never touches the world, such as reading the custom mail queue from the database or measuring CPU and
+memory load for the precautionary restart, runs off the world loop on Spring Boot's standard task scheduler and
+executor; its result goes back to the world loop. The standard `spring.task.*` keys tune them:
+
+| Key                                         | Default                 | Meaning                                          |
+| ------------------------------------------- | ----------------------- | ------------------------------------------------ |
+| `spring.task.scheduling.pool.size`          | `2`                     | threads for delayed and periodic background work |
+| `spring.task.scheduling.thread-name-prefix` | `l2nx-background-`      | name prefix of the scheduler threads             |
+| `spring.task.execution.pool.*`              | Spring Boot defaults    | the executor for immediate background work       |
+| `spring.task.execution.thread-name-prefix`  | `l2nx-background-exec-` | name prefix of the executor threads              |
+
+Leave `spring.threads.virtual.enabled` unset: with virtual threads Spring Boot builds a scheduler whose periodic runs
+may overlap, and the key switches every other executor of the server too.
 
 ## Health and metrics
 
@@ -221,9 +245,10 @@ curl -s -X POST -H 'Content-Type: application/json' -d '{"configuredLevel":"DEBU
 
 Metrics are the standard Spring Boot ones (JVM, process, system, log events, `hikaricp.*`, `tomcat.*`, `executor.*`
 for the thread pools), tagged with `application`, plus `l2nx.network.*` (connections, bytes, drops, closes by reason),
-`grpc.server.*` / `grpc.client.*` for the GS-link, `l2nx.players.online` and, on the game server, the `l2nx.engine.*` loop metrics (pass time and phases, passes over
-budget, inbox depth, timers, failures) and the legacy execution timers `l2nx.legacy.task` (run time per thread pool
-task class), `l2nx.legacy.task.all` (histogram across all tasks), `l2nx.legacy.task.lag` (start delay of scheduled tasks) and `l2nx.legacy.packet` (run time per client
+`grpc.server.*` / `grpc.client.*` for the GS-link, `l2nx.players.online`, `l2nx.session.queue.depth` (items in a
+client's input queue after each packet it sends, one histogram across all clients for p99 and maximum) and, on the game server, the `l2nx.engine.*` loop metrics (pass time and phases, passes over
+budget, `l2nx.engine.pass.running` (seconds the running pass has taken so far, 0 between passes, so a blocked pass shows before it ends), inbox depth, timers, failures, calls from a thread that does not own the loop; `l2nx.engine.jdbc.on.loop`, the time
+loop threads spend in JDBC calls until database work moves off the loop, with a `WARN` naming the calling code once per site and minute) and `l2nx.legacy.packet` (run time per client
 packet).
 
 ## Logs
