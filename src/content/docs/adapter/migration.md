@@ -14,6 +14,36 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.110.0: private-store contract
+
+**What changed.** The private-store commands and events were reshaped. A host that handles `StartPrivateStore*`
+commands, refuses a store start or purchase, or reads purchase events must adapt in the same release that upgrades
+the api:
+
+- A new `StartPrivateStoreBuyCommand` opens a buy store; its lines are `WantedLine` (`itemTemplateId`, `count`,
+  `priceAdena`). `StartPrivateStoreSellCommand` and `StartPrivateStorePackageSellCommand` now extend the new
+  `StartPrivateStoreSellingCommand`, which carries `getLines()` and `getSellerFeePercent()`; the common base
+  `StartPrivateStoreCommand` no longer has them.
+- `DroppedLine` takes a required `lineIndex` (0-based index into the command's `lines`), and its `itemId` is
+  nullable.
+- `PrivateStoreFees`, `MAX_FEE_PERCENT` and `BuyFromPrivateStoreCommand.MAX_LINES` are removed: limits are the
+  platform's decision. A fee percent is validated only as not negative (seller fee also at most 100); refuse an
+  oversized purchase with `TOO_MANY_LINES`.
+- The `WellKnown*` private-store constant classes are replaced by the enums `PrivateStoreReason`,
+  `DroppedLineReason` and `PrivateStoreMetadataKey`. `SellerFee` is now `PrivateStoreFee`, and
+  `PrivateStoreMetadata` reads the seller and buyer fee from a purchase event's metadata.
+- The purchase metadata `source` is now a `SessionSource` name, `CLIENT` or `APP` (it was `in_game` or `remote`).
+- New lenient parsers return `null` for an unknown token: `SessionSource.fromToken` and the `fromToken` of the new
+  enums.
+
+**What to do.**
+
+1. Replace the removed constants and classes with the enums and types above; take the `lines` of a sell command from
+   `StartPrivateStoreSellingCommand`.
+2. Fill `lineIndex` in every `DroppedLine` you report.
+3. Send `CLIENT` or `APP` as the purchase `source`, and read it with `SessionSource.fromToken`.
+4. Handle `StartPrivateStoreBuyCommand` to support buy stores.
+
 ## nx-gs-adapter-core 0.40.0: adapter-owned schema migrations
 
 **What changed.** The adapter now creates and updates its own `l2nx_*` tables in the game database itself, before

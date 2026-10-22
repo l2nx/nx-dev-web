@@ -14,6 +14,35 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.110.0: контракт частных магазинов
+
+**Что изменилось.** Команды и события частных магазинов переработаны. Хост, который обрабатывает команды
+`StartPrivateStore*`, отказывает в открытии магазина или покупке либо читает события покупки, должен адаптироваться в
+том же релизе, который обновляет api:
+
+- Новая команда `StartPrivateStoreBuyCommand` открывает магазин скупки; её строки — `WantedLine`
+  (`itemTemplateId`, `count`, `priceAdena`). `StartPrivateStoreSellCommand` и `StartPrivateStorePackageSellCommand`
+  теперь наследуют новый `StartPrivateStoreSellingCommand`, в котором `getLines()` и `getSellerFeePercent()`; в общей
+  базе `StartPrivateStoreCommand` их больше нет.
+- У `DroppedLine` появился обязательный `lineIndex` (индекс с нуля в `lines` команды), а `itemId` стал nullable.
+- `PrivateStoreFees`, `MAX_FEE_PERCENT` и `BuyFromPrivateStoreCommand.MAX_LINES` удалены: лимиты определяет
+  платформа. Процент комиссии проверяется только на неотрицательность (комиссия продавца ещё и не более 100);
+  слишком большую покупку отклоняйте с `TOO_MANY_LINES`.
+- Классы-константы `WellKnown*` частных магазинов заменены enum-ами `PrivateStoreReason`, `DroppedLineReason` и
+  `PrivateStoreMetadataKey`. `SellerFee` теперь `PrivateStoreFee`, а `PrivateStoreMetadata` читает комиссию продавца
+  и покупателя из metadata события покупки.
+- Метаданные покупки `source` теперь имя `SessionSource`: `CLIENT` или `APP` (раньше `in_game` или `remote`).
+- Новые мягкие парсеры возвращают `null` для неизвестного токена: `SessionSource.fromToken` и `fromToken` новых
+  enum-ов.
+
+**Что делать.**
+
+1. Замените удалённые константы и классы на перечисленные enum-ы и типы; `lines` команды продажи берите из
+   `StartPrivateStoreSellingCommand`.
+2. Заполняйте `lineIndex` в каждом сообщаемом `DroppedLine`.
+3. Отправляйте `CLIENT` или `APP` в `source` покупки и читайте его через `SessionSource.fromToken`.
+4. Обработайте `StartPrivateStoreBuyCommand`, чтобы поддержать магазины скупки.
+
 ## nx-gs-adapter-core 0.40.0: миграции схемы адаптера
 
 **Что изменилось.** Адаптер теперь сам создаёт и обновляет свои таблицы `l2nx_*` в игровой базе до старта любого
