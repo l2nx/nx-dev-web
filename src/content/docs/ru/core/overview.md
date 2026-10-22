@@ -42,15 +42,16 @@ checks, graceful shutdown и образ Docker. Данные хранятся в
 
 ## Структура
 
-Целевая структура; в репозитории есть `libs/boot`, `libs/database`, `libs/network`, `engine/core`,
-`login/` и `chronicles/high-five/`.
+Целевая структура; в репозитории есть `libs/boot`, `libs/database`, `libs/gslink`, `libs/network`, `engine/core`,
+`protocols/login/c621`, `login/`, `chronicles/high-five/` и `tools/load/`.
 
 ```
 libs/          инфраструктура без знаний о Lineage 2
 engine/        механики, общие для всех хроник
+protocols/     по каталогу на сетевой протокол: опкоды, кодеки пакетов, ключи и шифр кадров, общие для серверов и нагрузочных ботов
 login/         один сервер логина для всех хроник
 chronicles/    по каталогу на хронику: server, scripts, datapack, boot
-tools/         подготовка данных из собственного клиента оператора
+tools/         подготовка данных из собственного клиента оператора; load/: нагрузочный стенд
 ```
 
 Хроника держит код и данные в одном каталоге, поэтому они меняются вместе. Квесты, поведение NPC и обработчики —

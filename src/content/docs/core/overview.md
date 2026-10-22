@@ -43,15 +43,16 @@ Every stage ends with a server that builds and a client that logs in and plays.
 
 ## Layout
 
-The target layout; the repository has `libs/boot`, `libs/database`, `libs/network`, `engine/core`, `login/` and
-`chronicles/high-five/`.
+The target layout; the repository has `libs/boot`, `libs/database`, `libs/gslink`, `libs/network`, `engine/core`,
+`protocols/login/c621`, `login/`, `chronicles/high-five/` and `tools/load/`.
 
 ```
 libs/          infrastructure with no Lineage 2 knowledge
 engine/        mechanics shared by every chronicle
+protocols/     one wire protocol each: opcodes, packet codecs, keys and frame cipher, shared by servers and load bots
 login/         one login server for every chronicle
 chronicles/    one self-contained directory per chronicle: server, scripts, datapack, boot
-tools/         data preparation from the operator's own client
+tools/         data preparation from the operator's own client; load/: the load harness
 ```
 
 A chronicle keeps its code and its data in one directory, so the two change together. Quests, NPC behaviour and
