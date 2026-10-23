@@ -14,6 +14,43 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.112.0, nx-gs-adapter-core 0.46.0, nx-gs-db-migrations 0.4.0: private-store start cooldown
+
+**What changed.** A private store started from the app can no longer be restarted right away to dump prices: a new
+start of a character waits a few minutes after the real start of that character's previous app private store. The
+adapter carries the rule and the data; the host enforces it.
+
+- New key `app.private-store.start-cooldown-minutes` of `l2nx-app.properties` (default `5`, `0` turns the rule off,
+  `0`-`1440`; see [configuration](/adapter/configuration/#app-settings-file)) and its typed value
+  `AppRules.privateStoreStartCooldownMinutes()`.
+- New `NxAppSessions.findLastStartedByCharacter(int characterId, ActivityType activity)`: the character's session of
+  that type with the latest real start, open or closed. Same rules as the master-account read: starts that never
+  really happened do not count.
+- Renamed: `NxAppSessions.findLastStarted(UUID, ActivityType)` is now `findLastStartedByMasterAccount(UUID,
+  ActivityType)`; no deprecated copy is kept.
+- Both reads complete the future exceptionally on a database failure and also while the adapter's session engine does
+  not run (still booting, disabled, or not started). Before this release the master-account read answered an empty
+  `Optional` in that case.
+- New refusal token `PrivateStoreReason.COOLDOWN` (`INVALID_STATE`, with `retryAt`).
+- The settings snapshot `AppSettings`: new `privateStoreStartCooldownMinutes`, and `startCooldownMinutes` is renamed to
+  `fishingStartCooldownMinutes` (getter and builder method too). The constructor takes the new field, so code that
+  builds `AppSettings` (tests included) uses the builder.
+- New changeset `0010` of `nx-gs-db-migrations`: an index of the adapter's session table that serves the per-character
+  read. The adapter applies it at start, like the earlier changesets.
+
+**What to do.**
+
+1. In every private-store start from the app (sell, package sell, buy), when
+   `NxAppRules.current().privateStoreStartCooldownMinutes()` is above `0`, read
+   `findLastStartedByCharacter(characterId, ActivityType.OFFLINE_PRIVATE_STORE)` and refuse the start with `COOLDOWN`
+   and `retryAt` = its `startedAt` plus the cooldown while that moment is still ahead. Wait for the future on your
+   command thread, never on the adapter IO pool.
+2. A failed read refuses the start as temporarily unavailable, never as "no previous store".
+3. Never apply the cooldown to a stop: closing a store is always allowed.
+4. Rename calls of `findLastStarted(masterAccountId, activity)` to `findLastStartedByMasterAccount`, and uses of
+   `AppSettings` `startCooldownMinutes` to `fishingStartCooldownMinutes`.
+5. Upgrade `nx-gs-db-migrator-liquibase5` to 0.2.2: it brings `nx-gs-db-migrations` 0.4.0 (changeset 0010).
+
 ## nx-gs-adapter-api 0.111.0, nx-gs-adapter-core 0.45.0: app settings file
 
 **What changed.** The adapter now owns the per-server app settings: the file `l2nx-app.properties` (see

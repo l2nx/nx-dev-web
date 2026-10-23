@@ -14,6 +14,43 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.112.0, nx-gs-adapter-core 0.46.0, nx-gs-db-migrations 0.4.0: кулдаун старта частного магазина
+
+**Что изменилось.** Частный магазин из приложения больше нельзя сразу перезапустить, чтобы сбить цены: новый старт
+персонажа ждёт несколько минут после фактического старта предыдущего магазина этого персонажа из приложения. Адаптер
+несёт правило и данные, соблюдает его хост.
+
+- Новый ключ `app.private-store.start-cooldown-minutes` в `l2nx-app.properties` (по умолчанию `5`, `0` отключает
+  правило, `0`-`1440`; см. [конфигурацию](/ru/adapter/configuration/#файл-настроек-приложения)) и его типизированное
+  значение `AppRules.privateStoreStartCooldownMinutes()`.
+- Новый `NxAppSessions.findLastStartedByCharacter(int characterId, ActivityType activity)`: сессия персонажа этого
+  типа с самым поздним фактическим стартом, открытая или закрытая. Правила те же, что у чтения по мастер-аккаунту:
+  старты, которые на деле не состоялись, не считаются.
+- Переименование: `NxAppSessions.findLastStarted(UUID, ActivityType)` теперь называется
+  `findLastStartedByMasterAccount(UUID, ActivityType)`; устаревшая копия не сохраняется.
+- Оба чтения завершают future исключением при ошибке базы, а также пока движок сессий адаптера не работает (ещё
+  загружается, выключен или не запущен). До этого релиза чтение по мастер-аккаунту в таком случае отвечало пустым
+  `Optional`.
+- Новый код отказа `PrivateStoreReason.COOLDOWN` (`INVALID_STATE`, с `retryAt`).
+- Снимок настроек `AppSettings`: новое поле `privateStoreStartCooldownMinutes`, а `startCooldownMinutes`
+  переименовано в `fishingStartCooldownMinutes` (геттер и метод builder тоже). Конструктор принимает новое поле,
+  поэтому код, собирающий `AppSettings` (в том числе тесты), пользуется builder.
+- Новый changeset `0010` в `nx-gs-db-migrations`: индекс таблицы сессий адаптера для чтения по персонажу. Адаптер
+  применяет его при старте, как и прежние changeset.
+
+**Что делать.**
+
+1. В каждом старте частного магазина из приложения (продажа, пакетная продажа, покупка), если
+   `NxAppRules.current().privateStoreStartCooldownMinutes()` больше `0`, прочитайте
+   `findLastStartedByCharacter(characterId, ActivityType.OFFLINE_PRIVATE_STORE)` и отклоните старт с `COOLDOWN` и
+   `retryAt` = его `startedAt` плюс кулдаун, пока этот момент не наступил. Ждите future в своём потоке команды,
+   никогда не в IO-пуле адаптера.
+2. Ошибка чтения отклоняет старт как временно недоступный, а не как «предыдущего магазина нет».
+3. Никогда не применяйте кулдаун к остановке: закрыть магазин можно всегда.
+4. Переименуйте вызовы `findLastStarted(masterAccountId, activity)` в `findLastStartedByMasterAccount`, а обращения к
+   `startCooldownMinutes` у `AppSettings` в `fishingStartCooldownMinutes`.
+5. Поднимите `nx-gs-db-migrator-liquibase5` до 0.2.2: он приносит `nx-gs-db-migrations` 0.4.0 (changeset 0010).
+
 ## nx-gs-adapter-api 0.111.0, nx-gs-adapter-core 0.45.0: файл настроек приложения
 
 **Что изменилось.** Настройки приложения сервера теперь принадлежат адаптеру: файл `l2nx-app.properties` (см.
