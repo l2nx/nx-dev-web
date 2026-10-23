@@ -15,7 +15,8 @@ Environment variables are not supported. Details on the file lookup are in the
 Rules for values:
 
 - The file is read as UTF-8. Values are trimmed; an empty value counts as not set and the default applies.
-- Keys are read once at start. A change takes effect after a server restart.
+- Keys are read once at start. A change takes effect after a server restart. The only exception is the separate
+  [app settings file](#app-settings-file), which reloads while the server runs.
 - An invalid value (not a number, out of range, unknown option) never falls back to the default: the adapter logs
   an error naming the key, and the part that reads it does not start. For core keys the adapter goes `FAILED`.
 - Booleans are `true` or `false`, enumerations are case-insensitive.
@@ -66,28 +67,28 @@ Events the host publishes go through one bounded queue drained by one thread.
 Commands from the platform are dispatched to the handlers the host registers. Offsets are committed per batch, so
 a batch that was not committed is delivered again after a restart: handlers must be idempotent.
 
-| Key                                   | Type   | Default  | Required | Meaning                                                                                                                                                                                                                                                                            |
-| ------------------------------------- | ------ | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `l2nx.commands.poll-timeout-ms`       | ms     | `100`    | no       | How long each poll for new commands blocks. Lower means faster shutdown and more idle wakeups. `≥ 1`.                                                                                                                                                                              |
-| `l2nx.commands.shutdown-timeout-ms`   | ms     | `5000`   | no       | How long shutdown waits for running handlers. Commands not dispatched by then are delivered again on the next start. `≥ 0`.                                                                                                                                                        |
-| `l2nx.commands.host-sync-timeout-ms`  | ms     | `30000`  | no       | Limit on a handler's synchronous call into the game side through the host executor. On expiry the command ends with `UNAVAILABLE`. Keeps a saturated game pool from stalling the commands consumer. `≥ 1`.                                                                         |
-| `l2nx.commands.deferred-reply-max-ms` | ms     | `300000` | no       | Limit on a deferred reply: a handler that deferred its reply and never completed it gets `INTERNAL_ERROR`. Must exceed the longest legitimate deferred command on the server. `≥ 1`.                                                                                               |
+| Key                                   | Type   | Default  | Required | Meaning                                                                                                                                                                                                                                                                                                |
+| ------------------------------------- | ------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `l2nx.commands.poll-timeout-ms`       | ms     | `100`    | no       | How long each poll for new commands blocks. Lower means faster shutdown and more idle wakeups. `≥ 1`.                                                                                                                                                                                                  |
+| `l2nx.commands.shutdown-timeout-ms`   | ms     | `5000`   | no       | How long shutdown waits for running handlers. Commands not dispatched by then are delivered again on the next start. `≥ 0`.                                                                                                                                                                            |
+| `l2nx.commands.host-sync-timeout-ms`  | ms     | `30000`  | no       | Limit on a handler's synchronous call into the game side through the host executor. On expiry the command ends with `UNAVAILABLE`. Keeps a saturated game pool from stalling the commands consumer. `≥ 1`.                                                                                             |
+| `l2nx.commands.deferred-reply-max-ms` | ms     | `300000` | no       | Limit on a deferred reply: a handler that deferred its reply and never completed it gets `INTERNAL_ERROR`. Must exceed the longest legitimate deferred command on the server. `≥ 1`.                                                                                                                   |
 | `l2nx.commands.kafka.<property>`      | string | —        | no       | Passed as is to the Kafka consumer of commands as `<property>`. Defaults `max.poll.records=50` and `auto.offset.reset=earliest` can be overridden this way; `bootstrap.servers`, `client.id`, `group.id`, `enable.auto.commit`, `security.protocol` and `sasl.*` are pinned by the adapter and cannot. |
 
 ## nx-gs-db-sync-core
 
 The database sync engine (`l2nx.cdc-engine.*`). The defaults are sized for an items table of about 12 million rows.
 
-| Key                                                       | Type | Default                          | Required | Meaning                                                                                                                                                                     |
-| --------------------------------------------------------- | ---- | -------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `l2nx.cdc-engine.tick-interval-seconds`                   | s    | `60`                             | no       | Period between sync cycles of each entity. Lower means fresher data and more database load. `≥ 1`.                                                                          |
-| `l2nx.cdc-engine.rows-per-window`                         | int  | `500000`                         | no       | Rows read per query window; larger entities are read in several windows. Higher speeds up the initial sync but holds reads longer and needs more heap. `1` to `10000000`.   |
-| `l2nx.cdc-engine.query-timeout-seconds`                   | s    | `10`                             | no       | JDBC timeout of each query. A window that times out is aborted and retried on the next cycle. Raise it for large tables on slow disks. `≥ 1`.                               |
-| `l2nx.cdc-engine.publish-flush-seconds`                   | s    | `5`                              | no       | How long the end of a cycle waits for publish confirmations. Unconfirmed rows are published again in the next cycle. Raise it on `publishes still pending` warnings. `≥ 1`. |
-| `l2nx.cdc-engine.workers`                                 | int  | `max(2, min(entities, cores/2))` | no       | Size of the shared engine pool. `0` means the default formula.                                                                                                              |
-| `l2nx.cdc-engine.fetch-size`                              | int  | `10000`                          | no       | JDBC fetch size hint. Ignored on MySQL Connector/J (the adapter streams rows there); MariaDB uses it as a cursor batch only with `useCursorFetch=true` in the URL; other drivers take it as the cursor batch. `≥ 1`.                                     |
-| `l2nx.cdc-engine.persist.dir`                             | path | `nx-cdc-snapshot`                | no       | Directory of the on-disk snapshot cache, relative to the JVM working directory unless absolute. See below.                                                                  |
-| `l2nx.cdc-engine.persist.checkpoint-min-interval-seconds` | s    | `300`                            | no       | Minimum interval between snapshot file rewrites of one entity. `≥ 0`.                                                                                                       |
+| Key                                                       | Type | Default                          | Required | Meaning                                                                                                                                                                                                              |
+| --------------------------------------------------------- | ---- | -------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `l2nx.cdc-engine.tick-interval-seconds`                   | s    | `60`                             | no       | Period between sync cycles of each entity. Lower means fresher data and more database load. `≥ 1`.                                                                                                                   |
+| `l2nx.cdc-engine.rows-per-window`                         | int  | `500000`                         | no       | Rows read per query window; larger entities are read in several windows. Higher speeds up the initial sync but holds reads longer and needs more heap. `1` to `10000000`.                                            |
+| `l2nx.cdc-engine.query-timeout-seconds`                   | s    | `10`                             | no       | JDBC timeout of each query. A window that times out is aborted and retried on the next cycle. Raise it for large tables on slow disks. `≥ 1`.                                                                        |
+| `l2nx.cdc-engine.publish-flush-seconds`                   | s    | `5`                              | no       | How long the end of a cycle waits for publish confirmations. Unconfirmed rows are published again in the next cycle. Raise it on `publishes still pending` warnings. `≥ 1`.                                          |
+| `l2nx.cdc-engine.workers`                                 | int  | `max(2, min(entities, cores/2))` | no       | Size of the shared engine pool. `0` means the default formula.                                                                                                                                                       |
+| `l2nx.cdc-engine.fetch-size`                              | int  | `10000`                          | no       | JDBC fetch size hint. Ignored on MySQL Connector/J (the adapter streams rows there); MariaDB uses it as a cursor batch only with `useCursorFetch=true` in the URL; other drivers take it as the cursor batch. `≥ 1`. |
+| `l2nx.cdc-engine.persist.dir`                             | path | `nx-cdc-snapshot`                | no       | Directory of the on-disk snapshot cache, relative to the JVM working directory unless absolute. See below.                                                                                                           |
+| `l2nx.cdc-engine.persist.checkpoint-min-interval-seconds` | s    | `300`                            | no       | Minimum interval between snapshot file rewrites of one entity. `≥ 0`.                                                                                                                                                |
 
 The snapshot cache is always on. It is stored as `<persist.dir>/<schema>/<entity>.snap` and reloaded on start, so
 the first cycle after a restart also reports rows deleted from the database while the server was down. A lock file
@@ -113,6 +114,52 @@ The in-memory state sync engine (`l2nx.runtime-sync.*`). Its keys are independen
 
 Game data is also republished when the host asks for it after a datapack reload and when the platform requests it,
 so the schedule is only a safety net.
+
+## App settings file
+
+`l2nx-app.properties` holds the per-server behaviour of what a character does in the game on a command from the app
+while its player is away from the client. `l2nx.properties` connects the server to the platform; this file is the
+server's product behaviour and is meant to be edited by its game designer. `nx-gs-adapter-core` reads it on a game
+server only (a login server ignores it).
+
+- **Location.** Next to `l2nx.properties`: in the JVM working directory or, when `-Dl2nx.config-file` points
+  elsewhere, in the directory of that file. A missing file means every default. JVM system properties do not
+  override these keys.
+- **Reference file.** [`l2nx-app.properties`](https://github.com/l2nx/nx-gs-adapter/blob/master/l2nx-app.properties)
+  lists every key set to its default, with comments. Copy it and change what you need.
+- **Defaults.** A missing key takes its default. Every session type is off by default.
+- **Values.** Trimmed; `true` / `false` and enumeration names are exact (case matters). The file is UTF-8; a leading
+  byte order mark is ignored.
+- **Validation.** The whole file is validated first. One invalid value or unknown key (a typo included) applies
+  nothing: the previous values stay and the log has one
+  `app settings not applied, previous values stay: <key>: <reason>` line per problem. Unlike the `l2nx.*` keys, an
+  invalid value never stops the server.
+- **Reload.** The adapter checks the file about every 5 seconds and applies a change without a restart; the log shows
+  `app settings updated: <key>: <old> -> <new>`.
+- **Running sessions.** New values govern new starts. A session keeps the return threshold it started with; a
+  disabled session type lets running sessions finish and refuses new starts.
+
+The host reads the live values through the typed `NxAppRules` (`NxAdapter.appRules()`, `ConnectContext.appRules()`,
+`CommandContext.appRules()`); `current()` returns an immutable `AppRules` snapshot.
+
+| Key                                    | Type                  | Default  | Meaning                                                                                                                                                                                                                              |
+| -------------------------------------- | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `app.phantom.title.text`               | string                | empty    | Display-only title over a character the app placed in the world, instead of its own title. Not stored. 1-16 characters; empty means no override.                                                                                     |
+| `app.phantom.title.color`              | 6 hex digits RGB      | `FFFF00` | Colour of that title. Used only when the title text is set.                                                                                                                                                                          |
+| `app.session.recent-logout-minutes`    | minutes               | `2`      | No app start within this time after the character left the game with a client. `0` turns the rule off. `0`-`60`.                                                                                                                     |
+| `app.session.restart-window-minutes`   | minutes               | `15`     | No app start when a scheduled restart is closer than this. `0`-`120`.                                                                                                                                                                |
+| `app.session.return-threshold-minutes` | minutes               | `30`     | A session that ends with less time in the world than this returns the character to where it started; at or above it the character stays. One threshold for every session type. `≥ 0`.                                                |
+| `app.private-store.enabled`            | boolean               | `false`  | The app private store on this server. `false`: a start is refused as disabled.                                                                                                                                                       |
+| `app.fishing.enabled`                  | boolean               | `false`  | Offline fishing on this server. `false`: a start is refused as disabled. `true` requires `app.fishing.spot-pool`.                                                                                                                    |
+| `app.fishing.start-cooldown-minutes`   | minutes               | `15`     | No new fishing start for any character of a master account within this time after the real start of that master account's previous app fishing session. `0`-`1440`.                                                                  |
+| `app.fishing.min-duration-minutes`     | minutes               | `30`     | Shortest fishing a start may ask for. `≥ 1`.                                                                                                                                                                                         |
+| `app.fishing.max-duration-minutes`     | minutes               | `1440`   | Longest fishing a start may ask for; not below `app.fishing.min-duration-minutes`. The server's own daily limit may still end a session earlier.                                                                                     |
+| `app.fishing.float-distance`           | game units            | `170`    | Distance from the fisher to the float along the spot's heading. `90`-`250`.                                                                                                                                                          |
+| `app.fishing.spot-order`               | `RANDOM`/`FIRST_FREE` | `RANDOM` | How a free spot of the pool is picked: any free spot, or the free spot with the lowest id.                                                                                                                                           |
+| `app.fishing.spot-pool`                | string                | empty    | Name of the spot pool fishing uses on this server; the pool itself (spot ids, coordinates, heading) is the game server's data. 1-32 characters of `a-z`, `0-9` and `_`; empty means no pool. A changed pool governs new starts only. |
+| `app.restore.batch-size`               | int                   | `10`     | Sessions restored per batch after a restart. Capped at half of `l2nx.io.workers`. `≥ 1`.                                                                                                                                             |
+| `app.restore.batch-pause-millis`       | ms                    | `1000`   | Pause between restore batches. `≥ 0`.                                                                                                                                                                                                |
+| `app.history.retention-days`           | days                  | `90`     | Closed sessions older than this are deleted from the adapter's table at server start. `≥ 7`.                                                                                                                                         |
 
 ## Other modules
 

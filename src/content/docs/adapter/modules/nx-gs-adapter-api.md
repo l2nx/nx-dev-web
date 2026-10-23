@@ -46,6 +46,15 @@ constructor). At connect a module receives a `ConnectContext` with the adapter's
 triggers, game data and the IO pool. A host that publishes events or handles platform commands does it from its own
 `AdapterModule`. A module that throws goes `FAILED`; the other modules keep running.
 
+## App sessions and app settings
+
+`OfflineSessionHost` carries only the world side of an app session (place, restore and remove the character). The
+rules come from the [app settings file](/adapter/configuration/#app-settings-file) through `NxAppRules`, whose
+`current()` returns an immutable `AppRules` snapshot; `ConnectContext.appRules()` and `CommandContext.appRules()` give
+the same instance. `NxAppSessions` lets the host find the open sessions of a master account
+(`findOpenByMasterAccount`, in memory) and its latest started session (`findLastStarted`, a database read) for
+cooldown and one-session-per-account checks. Every `OfflineSession` carries the `returnThresholdMs` it started with.
+
 ## Configuration
 
 No keys of its own.

@@ -33,6 +33,8 @@ Always. It brings `nx-gs-adapter-api`, `nx-gs-kafka` and `nx-gs-commons` transit
 - Delivers platform commands to the handlers the host registers and sends back their results.
 - Runs a shared IO pool for blocking work of modules and handlers, so that work never runs on the game thread.
 - Runs app sessions when the host provides an `OfflineSessionHost`.
+- Owns the per-server [app settings file](/adapter/configuration/#app-settings-file) `l2nx-app.properties`: reads
+  it, validates it as a whole and reloads it about every 5 seconds without a restart.
 
 ## Host API
 
@@ -44,6 +46,7 @@ The host talks to the adapter through `app.l2nx.gs.adapter.core.NxAdapter`:
 | `state()`                 | Current state: `INIT`, `REGISTERING`, `ACTIVE`, `DEGRADED`, `FAILED`, `REJECTED`, `DISABLED`, `CLOSED`. |
 | `onStateChange(callback)` | Callback on every state change.                                                                         |
 | `hostExecutor(executor)`  | Executor that runs work on the game side for command handlers. Set it before `start()`.                 |
+| `appRules()`              | Live app settings as `NxAppRules`. Loads the file on the first call; usable before `start()`.           |
 | `migrateSchema()`         | Migrates the `l2nx_*` tables early, for a host that reads them before `start()`. Runs once.             |
 | `shutdown()`              | Stops the adapter and delivers queued events. The adapter's JVM shutdown hook calls it too.             |
 
@@ -52,4 +55,5 @@ See the [quick start](/adapter/quick-start/) for the boot sequence.
 ## Configuration
 
 Connection, IO pool, Kafka producer, events and commands keys:
-[configuration → nx-gs-adapter-core](/adapter/configuration/#nx-gs-adapter-core).
+[configuration → nx-gs-adapter-core](/adapter/configuration/#nx-gs-adapter-core). The app settings file has its own
+keys: [configuration → app settings file](/adapter/configuration/#app-settings-file).

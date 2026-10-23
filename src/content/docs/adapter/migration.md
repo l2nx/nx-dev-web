@@ -14,6 +14,36 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.111.0, nx-gs-adapter-core 0.45.0: app settings file
+
+**What changed.** The adapter now owns the per-server app settings: the file `l2nx-app.properties` (see
+[configuration](/adapter/configuration/#app-settings-file)), validated as a whole and reloaded without a restart.
+The host no longer supplies or publishes settings. A host that implements `OfflineSessionHost` or calls
+`NxAppSessions` must adapt in the same release that upgrades the api and the core:
+
+- `OfflineSessionHost.settings()` is removed; delete the implementation.
+- `OfflineSessionSettings` is removed. Its values are now keys of the file: return threshold, retention days, restore
+  batch size and pause.
+- `NxAppSessions.publishSettings` is removed: the adapter publishes the settings itself. Stop calling it and drop the
+  host code that built `AppSettings`.
+- `OfflineSession` has a new nullable `returnThresholdMs`, fixed at the session's start; the `returnToOrigin` flag of
+  `removeFromWorld` is computed from it.
+- New: `NxAppSessions.findOpenByMasterAccount` and `findLastStarted`, and `NxAppRules` (`NxAdapter.appRules()`,
+  `ConnectContext.appRules()`, `CommandContext.appRules()`) for the typed rules.
+
+**What to do.**
+
+1. Remove `settings()` from your `OfflineSessionHost` and the calls to `publishSettings`.
+2. Create `l2nx-app.properties` next to `l2nx.properties`, starting from the
+   [reference file](https://github.com/l2nx/nx-gs-adapter/blob/master/l2nx-app.properties), and move your former
+   settings values into it. Every session type is off by default: enable the ones the server offers.
+3. Read the rules (cooldowns, durations, windows, spot pool) from `NxAppRules.current()` once per check instead of
+   from your own configuration.
+4. If you build `OfflineSession` yourself (tests included), pass the new `returnThresholdMs`.
+
+The schema changes (a nullable column and an index on the adapter's session table) are applied by the adapter's
+migrator at start.
+
 ## nx-gs-adapter-api 0.110.0: private-store contract
 
 **What changed.** The private-store commands and events were reshaped. A host that handles `StartPrivateStore*`
