@@ -14,6 +14,26 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.115.0, nx-gs-adapter-core 0.48.0: open sessions of a type, `APP_INTERRUPTED`
+
+Additive: a host that uses neither addition needs no change.
+
+- New `NxAppSessions.findOpen(ActivityType activity)`: every session of that type the adapter holds (running, awaiting
+  the restore after a restart, a start in flight, an end still being written), ordered by `startedAt`, then id. It
+  reads memory only, so any thread may call it; without a running session engine it answers an empty list. Call it
+  right before `hostReady()` to count the sessions awaiting the restore against your per-account and per-device limits
+  and to keep their spots (`OfflineSession.getSpotPool()`, `getSpotId()`) out of your free-spot pick.
+- New end reason `LogoutReason.APP_INTERRUPTED`, accepted by `NxAppSessions.onActionEnded`: the game stopped the placed
+  character's action (it was teleported, the tool or consumable the action needs vanished, the action failed to
+  restart). Use it instead of `KICKED` (a staff kick) or `APP_STOPPED` (the player's stop). Send it only once the
+  platform accepts it: a new reason reaches the adapter first, then the platform, then the host.
+
+## nx-gs-adapter-api 0.114.0, nx-gs-adapter-core 0.47.0: default title of a placed character
+
+`app.phantom.title.text` now defaults to `l2nx.app` instead of no title. A server file without the key shows
+`l2nx.app` over characters the app placed in the world. To keep the character's own title, set the key to an empty
+value (`app.phantom.title.text=`). No code change for hosts.
+
 ## nx-gs-adapter-api 0.112.0, nx-gs-adapter-core 0.46.0, nx-gs-db-migrations 0.4.0: private-store start cooldown
 
 **What changed.** A private store started from the app can no longer be restarted right away to dump prices: a new
@@ -27,7 +47,7 @@ adapter carries the rule and the data; the host enforces it.
   that type with the latest real start, open or closed. Same rules as the master-account read: starts that never
   really happened do not count.
 - Renamed: `NxAppSessions.findLastStarted(UUID, ActivityType)` is now `findLastStartedByMasterAccount(UUID,
-  ActivityType)`; no deprecated copy is kept.
+ActivityType)`; no deprecated copy is kept.
 - Both reads complete the future exceptionally on a database failure and also while the adapter's session engine does
   not run (still booting, disabled, or not started). Before this release the master-account read answered an empty
   `Optional` in that case.

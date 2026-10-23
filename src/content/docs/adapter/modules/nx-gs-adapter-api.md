@@ -56,7 +56,9 @@ account (`findOpenByMasterAccount`, in memory) for the one-session-per-account c
 master account (`findLastStartedByMasterAccount`, a database read) for the fishing start cooldown, and the latest
 started session of a character (`findLastStartedByCharacter`, a database read) for the private-store start cooldown
 only. A failed database read completes its future exceptionally; the host refuses the start as temporarily
-unavailable. Every `OfflineSession` carries the `returnThresholdMs` it started with.
+unavailable. `findOpen` (in memory) lists every open session of a type, those awaiting the restore included: the host
+calls it right before `hostReady()` to reserve their limits and spots. Every `OfflineSession` carries the
+`returnThresholdMs` it started with.
 
 ## Configuration
 
