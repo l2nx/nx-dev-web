@@ -6,7 +6,8 @@ sidebar:
 ---
 
 Publishes the game data the server has parsed from its datapack: item, NPC, skill, recipe, armor set, soul crystal,
-class and instance templates, experience levels and the gear score ruleset. The platform uses them as catalogs for
+class and instance templates, item options with the augmentation catalog (life stones and target groups),
+experience levels and the gear score ruleset. The platform uses them as catalogs for
 the wiki, the market and gear score. The module publishes what the server holds in memory after its own overrides,
 so the catalog matches the game.
 

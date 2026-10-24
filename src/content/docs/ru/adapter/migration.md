@@ -14,6 +14,18 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.116.0, nx-gs-gd-sync-core 0.15.0: `StatModifier`, каталог аугментации
+
+**Ломает только Java-код.** `SkillStatModifier` (пакет `app.l2nx.gs.adapter.api.kafka.sync.gd.skill.effect`) теперь
+`StatModifier` в `app.l2nx.gs.adapter.api.kafka.sync.gd`: его используют и скиллы, и опции предметов. Поля, геттеры,
+билдер и JSON не изменились, deprecated-копии нет. Хосту, который собирает данные скиллов, достаточно заменить импорт и
+имя класса.
+
+Только добавления: три новых провайдера игровых данных, `ItemOptionProvider`, `AugmentationTargetGroupProvider` и
+`LifeStoneProvider` (сущности `itemoption`, `augmentationtargetgroup`, `lifestone`). Хост без них работает как раньше;
+хост, который их реализует, регистрирует каждый в `META-INF/services`, как остальные провайдеры, и возвращает `null` из
+`snapshot()`, пока его данные не загружены. Обновляйте `nx-gs-gd-sync-core` вместе с api: публикует их этот модуль.
+
 ## nx-gs-adapter-api 0.115.0, nx-gs-adapter-core 0.48.0: открытые сессии типа, `APP_INTERRUPTED`
 
 Только добавления: хосту, который не использует ни одно из них, ничего менять не нужно.

@@ -39,7 +39,13 @@ interfaces live in `app.l2nx.gs.adapter.api.spi.provider`.
 
 Game data providers: `ItemTemplateProvider`, `NpcTemplateProvider`, `SkillProvider`, `RecipeTemplateProvider`,
 `ArmorSetTemplateProvider`, `SoulCrystalTemplateProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
-`InstanceTemplateProvider`, `GearScoreRulesetProvider`.
+`InstanceTemplateProvider`, `GearScoreRulesetProvider`, `ItemOptionProvider`, `AugmentationTargetGroupProvider`,
+`LifeStoneProvider`.
+
+The three augmentation providers describe the catalog the server rolls from: every item option the engine loaded
+(augmentation and enchant options share one id space), the groups of item templates that roll the same way, and each
+life stone with the groups it accepts and the probability of every option per slot. The server computes those
+probabilities with its own roll code; the platform stores them as they are.
 
 Modules implement `app.l2nx.gs.adapter.api.spi.AdapterModule` (a public class with a public no-argument
 constructor). At connect a module receives a `ConnectContext` with the adapter's capabilities: events, commands, sync

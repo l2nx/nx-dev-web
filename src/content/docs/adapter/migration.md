@@ -14,6 +14,19 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.116.0, nx-gs-gd-sync-core 0.15.0: `StatModifier`, augmentation catalog
+
+**Breaking for Java code only.** `SkillStatModifier` (package `app.l2nx.gs.adapter.api.kafka.sync.gd.skill.effect`)
+is now `StatModifier` in `app.l2nx.gs.adapter.api.kafka.sync.gd`: skills and item options share it. Fields, getters,
+builder and JSON are unchanged, and no deprecated copy is kept. A host that builds skill data replaces the import and
+the class name, nothing else.
+
+Additive: three new game data providers, `ItemOptionProvider`, `AugmentationTargetGroupProvider` and
+`LifeStoneProvider` (entities `itemoption`, `augmentationtargetgroup`, `lifestone`). A host without them keeps working;
+a host that implements them registers each in `META-INF/services` like the other providers and returns `null` from
+`snapshot()` until its data is loaded. Update `nx-gs-gd-sync-core` together with the api, since it is the module that
+publishes them.
+
 ## nx-gs-adapter-api 0.115.0, nx-gs-adapter-core 0.48.0: open sessions of a type, `APP_INTERRUPTED`
 
 Additive: a host that uses neither addition needs no change.

@@ -39,7 +39,13 @@ Java 8. Тег релиза `api/vX.Y.Z`. Версии — на
 
 Провайдеры игровых данных: `ItemTemplateProvider`, `NpcTemplateProvider`, `SkillProvider`, `RecipeTemplateProvider`,
 `ArmorSetTemplateProvider`, `SoulCrystalTemplateProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
-`InstanceTemplateProvider`, `GearScoreRulesetProvider`.
+`InstanceTemplateProvider`, `GearScoreRulesetProvider`, `ItemOptionProvider`, `AugmentationTargetGroupProvider`,
+`LifeStoneProvider`.
+
+Три провайдера аугментации описывают каталог, из которого сервер роллит: все опции предметов, загруженные движком
+(у опций аугментации и заточки одно пространство id), группы шаблонов предметов с одинаковым роллом и каждый life
+stone с группами, которые он принимает, и вероятностью каждой опции по слотам. Эти вероятности сервер считает своим же
+кодом ролла; платформа хранит их как есть.
 
 Модули реализуют `app.l2nx.gs.adapter.api.spi.AdapterModule` (публичный класс с публичным конструктором без
 аргументов). При подключении модуль получает `ConnectContext` с возможностями адаптера: события, команды, триггеры
