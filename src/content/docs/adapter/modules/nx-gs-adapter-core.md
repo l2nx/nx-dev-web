@@ -35,6 +35,9 @@ Always. It brings `nx-gs-adapter-api`, `nx-gs-kafka` and `nx-gs-commons` transit
 - Runs app sessions when the host provides an `OfflineSessionHost`.
 - Owns the per-server [app settings file](/adapter/configuration/#app-settings-file) `l2nx-app.properties`: reads
   it, validates it as a whole and reloads it about every 5 seconds without a restart.
+- Publishes the server's settings to the platform: the app settings and, when the host provides a
+  `GameSettingsProvider`, the engine configuration. Both go out on connect and again every 5 minutes, changed or
+  not; a change of the app settings file goes out at once.
 
 ## Host API
 

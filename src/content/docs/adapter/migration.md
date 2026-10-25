@@ -14,6 +14,17 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.117.1, nx-gs-adapter-core 0.49.1: `LifeStoneGrade.JEWELRY`, `GameSettingsProvider`
+
+**Breaking for Java code only.** The `LifeStoneGrade` constant `ACCESSORY` is now `JEWELRY` (neck, ear and finger
+slots); no deprecated copy is kept. A host that builds life stone data replaces the constant, nothing else; the grade
+is sent by name, so a host not yet updated keeps sending `ACCESSORY` until it is rebuilt.
+
+Additive: the optional `GameSettingsProvider` (see [api](/adapter/modules/nx-gs-adapter-api/)) publishes the engine
+configuration (enchant caps, attribute limits, mail fees, the offline private store fee). A host without it keeps
+working and publishes no game settings; a host that implements it registers it in `META-INF/services` and returns
+`null` from `gameSettings(...)` until its configuration is loaded. Two registered implementations fail the module.
+
 ## nx-gs-adapter-api 0.116.0, nx-gs-gd-sync-core 0.15.0: `StatModifier`, augmentation catalog
 
 **Breaking for Java code only.** `SkillStatModifier` (package `app.l2nx.gs.adapter.api.kafka.sync.gd.skill.effect`)

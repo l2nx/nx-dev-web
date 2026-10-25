@@ -36,6 +36,7 @@ interfaces live in `app.l2nx.gs.adapter.api.spi.provider`.
 | Game data providers (below) | [gd-sync](/adapter/modules/nx-gs-gd-sync-core/)                                                   | one per catalog the server offers |
 | `GameDataReadinessProvider` | [gd-sync](/adapter/modules/nx-gs-gd-sync-core/)                                                   | no                                |
 | `OfflineSessionHost`        | core (app sessions)                                                                               | no                                |
+| `GameSettingsProvider`      | core (settings sync)                                                                              | no                                |
 
 Game data providers: `ItemTemplateProvider`, `NpcTemplateProvider`, `SkillProvider`, `RecipeTemplateProvider`,
 `ArmorSetTemplateProvider`, `SoulCrystalTemplateProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
@@ -46,6 +47,12 @@ The three augmentation providers describe the catalog the server rolls from: eve
 (augmentation and enchant options share one id space), the groups of item templates that roll the same way, and each
 life stone with the groups it accepts and the probability of every option per slot. The server computes those
 probabilities with its own roll code; the platform stores them as they are.
+
+`GameSettingsProvider` gives the engine configuration as the engine applies it (enchant caps, attribute limits, mail
+fees, the offline private store fee), so the platform shows the server's rules to the player. The adapter calls it
+from its IO threads on connect and every 5 minutes; the provider builds the snapshot from the live configuration on
+every call, so a reloaded configuration reaches the platform within one period. `null` means the host is not ready
+yet; a call that throws is logged once per failure streak and retried on the next period.
 
 Modules implement `app.l2nx.gs.adapter.api.spi.AdapterModule` (a public class with a public no-argument
 constructor). At connect a module receives a `ConnectContext` with the adapter's capabilities: events, commands, sync
