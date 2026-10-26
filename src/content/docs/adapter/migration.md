@@ -14,6 +14,33 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.119.0: `clanId` and `allianceId` on chat messages
+
+**Breaking for Java code only.** `ChatMetadataKeys.CLAN_ID` and `ChatMetadataKeys.ALLIANCE_ID` are removed, with no
+deprecated copy. `ChatMessageEvent` now has the fields `clanId` and `allianceId` (`Long`, nullable) on every channel;
+its constructor takes them as two new trailing parameters, and the builder has `clanId(...)` and `allianceId(...)`.
+
+- A host that wrote the clan and alliance ids into the event `metadata` sets the two fields instead and stops writing
+  those keys: the platform no longer reads them from `metadata`.
+- The fields hold the speaker's clan and alliance at the moment of speaking. A message without a legal sender carries
+  the addressee: on `CLAN` its clan and alliance, on `ALLIANCE` only the alliance. No clan or alliance means `null`.
+- Code that calls the `ChatMessageEvent` constructor directly passes `null` for both new parameters, or the ids.
+
+## nx-gs-adapter-api 0.119.0, nx-gs-adapter-core 0.50.0: revive of a dead character
+
+Additive: a host that does not handle the new command needs no change. Until it does, the platform offers no revive for
+the server (the published app settings carry no `revive` group), and an older host answers the command as any unknown
+one.
+
+- New `ReviveCharacterCommand` / `ReviveCharacterResult`: gets a dead character up at a restart point (`TOWN`), with the
+  client connected or already closed. A host that wants the feature registers a handler for it and refuses with a
+  `ReviveRefusalReason` code where the revive is not possible.
+- New `AppRules` members `reviveEnabled()`, `reviveTownMode()` and `reviveTownSpotPools()`, and the keys
+  `app.revive.enabled` (default `true`), `app.revive.town.mode` (`NATIVE` by default, or `SPOT_POOL`) and
+  `app.revive.town.spot-pool`, see [configuration](/adapter/configuration/#app-settings-file). A server file without
+  them keeps working. `AppSettings` gains a `revive` field; its public constructor takes it as a new parameter, so
+  code that builds `AppSettings` itself passes `null` or a `ReviveSettings`.
+
 ## nx-gs-adapter-api 0.117.1, nx-gs-adapter-core 0.49.1: `LifeStoneGrade.JEWELRY`, `GameSettingsProvider`
 
 **Breaking for Java code only.** The `LifeStoneGrade` constant `ACCESSORY` is now `JEWELRY` (neck, ear and finger

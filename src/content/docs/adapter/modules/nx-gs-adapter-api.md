@@ -73,6 +73,16 @@ unavailable. `findOpen` (in memory) lists every open session of a type, those aw
 calls it right before `hostReady()` to reserve their limits and spots. Every `OfflineSession` carries the
 `returnThresholdMs` it started with.
 
+## Reviving a dead character
+
+`ReviveCharacterCommand` asks the host to get a dead character up at a restart point (`TOWN` today, the game's "to
+village"), with the client still connected or already closed; with `disconnectClient` a connected client is closed and
+the character stays out of the game at the restart point. The host registers a handler like for any other command and
+replies with `ReviveCharacterResult` (the restart point, where the character stands, whether a client was closed) or a
+refusal whose reason is a `ReviveRefusalReason`. A retry with the same `idempotencyKey` answers the recorded result.
+The settings come from `AppRules`: `reviveEnabled()`, `reviveTownMode()` (`ReviveTownMode.NATIVE` or `SPOT_POOL`) and
+`reviveTownSpotPools()`; see [configuration](/adapter/configuration/#app-settings-file) for the `app.revive.*` keys.
+
 ## Configuration
 
 No keys of its own.
