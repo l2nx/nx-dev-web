@@ -114,7 +114,7 @@
     }
   },
   "info": {
-    "description": "Third-party integration surface of nx-gamedata. Authenticate every request with the tenant API key: `Authorization: Bearer nx_api_...` (scope `gamedata.item-templates:read`). The tenant is the one the key belongs to — do NOT send a `Tenant-Id` header yourself; DO send `Server-Id` (the game-server UUID) on every call. Wiki-hidden item templates are never returned.",
+    "description": "Third-party integration surface of nx-gamedata. Authenticate every request with the tenant API key: `Authorization: Bearer nx_api_...` (scope `gamedata.item-templates:read`). The tenant is the one the key belongs to — do NOT send a `Tenant-Slug` header yourself; DO send `Server-Id` (the game-server UUID) on every call. Wiki-hidden item templates are never returned.",
     "title": "nx-gamedata — Integration API",
     "version": "v1"
   },
