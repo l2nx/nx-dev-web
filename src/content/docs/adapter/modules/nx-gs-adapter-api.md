@@ -41,7 +41,15 @@ interfaces live in `app.l2nx.gs.adapter.api.spi.provider`.
 Game data providers: `ItemTemplateProvider`, `NpcTemplateProvider`, `SkillProvider`, `RecipeTemplateProvider`,
 `ArmorSetTemplateProvider`, `SoulCrystalTemplateProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
 `InstanceTemplateProvider`, `GearScoreRulesetProvider`, `ItemOptionProvider`, `AugmentationTargetGroupProvider`,
-`LifeStoneProvider`.
+`LifeStoneProvider`, `FishingBaitProvider`, `FishingRodProvider`, `FishingShotProvider`.
+
+Until its data is loaded a provider returns `null` from `snapshot()`. An empty collection (an empty `Optional` for
+`GearScoreRulesetProvider`) means the catalog is empty, and the platform deletes every row of that entity for the
+server.
+
+The three fishing providers describe the gear the server accepts: every item it takes as a bait, a rod or a fishing
+shot, with the chance, fishing time and grade its fishing uses for that item. A server without fishing registers
+none.
 
 The three augmentation providers describe the catalog the server rolls from: every item option the engine loaded
 (augmentation and enchant options share one id space), the groups of item templates that roll the same way, and each
@@ -71,7 +79,18 @@ started session of a character (`findLastStartedByCharacter`, a database read) f
 only. A failed database read completes its future exceptionally; the host refuses the start as temporarily
 unavailable. `findOpen` (in memory) lists every open session of a type, those awaiting the restore included: the host
 calls it right before `hostReady()` to reserve their limits and spots. Every `OfflineSession` carries the
-`returnThresholdMs` it started with.
+`returnThresholdMs` it started with. The session types live in `app.l2nx.gs.adapter.api.spi.model.session`.
+
+`NxAppSessions.check(characterId, spotPool, spotId)` is the check mode of a start: it runs the adapter's own start
+checks (one open session per character, a free spot) and answers an `AppSessionCheckOutcome` (`ALLOWED`,
+`CHARACTER_BUSY` with the open session, `SPOT_TAKEN`, `UNAVAILABLE`) without writing anything, taking a spot or
+calling `OfflineSessionHost`. It backs the check commands (`CheckOfflineFishingCommand`): the host runs its start
+steps up to the first side effect and calls `check` where the start calls `start`, so a check and a start never
+answer differently.
+
+Every command carries `initiator` (`CommandInitiator`): who triggered it, with the platform user, an optional label,
+email and request IP. The core validates it before the handler runs; host rules read the master account from
+`initiator.getUserId()` and the request IP from `initiator.getIp()`.
 
 ## Reviving a dead character
 

@@ -14,6 +14,50 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.120.0, nx-gs-adapter-core 0.51.0, nx-gs-gd-sync-core 0.16.0, nx-gs-db-migrations 0.5.0: command initiator, session checks, fishing gear
+
+**Breaking.** Update the api, the core and gd-sync together and switch the host in one release.
+
+- **Command initiator.** Every command carries a required `initiator` (`CommandInitiator`): who triggered it
+  (`source` is `user` or the sending platform service; `userId` is set exactly for a user; optional `label`, `email`,
+  `ip`). `NxCommand` has `getInitiator()`, and every command constructor and builder takes it. The core refuses a
+  command without a valid initiator with `VALIDATION_FAILED` before your handler runs, and an `OwnerVerified` command
+  also needs a user source, so a handler reads a valid initiator and never re-checks it. Its `ip` has already passed
+  `ClientIdentifiers`. Code that builds commands itself (tests, tools) passes an initiator.
+- **Removed `masterAccountId` and `initiatorIp`** from `StartOfflineFishingCommand`, `StopOfflineFishingCommand`,
+  `ReviveCharacterCommand` and the private store start commands (`StartPrivateStoreCommand`), with no deprecated
+  copy. Read `initiator.getUserId()` for the master account and `initiator.getIp()` for the request IP, and pass them
+  on to `AppSessionStartRequest` as before. `BanCommand.issuedBy` and `SendCaptchaCommand.issuedBy` stay: they are the
+  name the record shows in the game, not the attribution.
+- **Package move.** `AppSessionStartRequest`, `AppSessionStartOutcome`, `ClientLoginOutcome`, `OfflineSession` and
+  `OfflineSessionPlacement` moved from `app.l2nx.gs.adapter.api.spi.model` to
+  `app.l2nx.gs.adapter.api.spi.model.session`. Replace the imports; nothing else changed in them.
+- **Session checks.** `NxAppSessions.check(characterId, spotPool, spotId)` answers an `AppSessionCheckOutcome`
+  (`ALLOWED`, `CHARACTER_BUSY` with the open session, `SPOT_TAKEN`, `UNAVAILABLE`) without writing anything, taking a
+  spot or calling `OfflineSessionHost`. The new `CheckOfflineFishingCommand` (result `AppSessionCheckResult`) asks
+  whether a fishing start with these inputs would start now: run your start steps up to the first side effect and
+  call `check` where the start calls `start`. A refusal is a successful check (`OK`, `allowed = false`). Until you
+  register a handler the adapter answers the command as unsupported. Code that implements `NxAppSessions` itself adds
+  `check`.
+- **New refusal vocabulary.** `AlreadyActiveScope.IP` (your per-IP limit, counted under `initiator.ip` and the
+  character's recent game-client IP; an absent IP limits nothing), and the `AppSessionRefusalReason` values
+  `NO_FISHING_SHOT`, `INVALID_FISHING_SHOT` and `FISHING_SHOT_GRADE_MISMATCH` for the new optional
+  `StartOfflineFishingCommand.fishingShotItemId`. A `DAILY_LIMIT` refusal may now carry `retryAt`, the moment your
+  daily allowance resets; leave it out when your build does not know that moment.
+- **`ActivityMetadataKey`** names the keys of an activity-usage row `metadata` (`elapsed`, `remaining`, `rodItemId`,
+  `baitItemId`, `fishingShotItemId`, `spotPool`, `spotId`); write `key()` instead of your own strings. The map stays
+  open.
+- **Open-sessions snapshot.** The core publishes `AppSessionsSnapshotEvent` (the ids of every open app session of the
+  server) every 60 s and when the app-sessions module starts, and republishes a session end until the platform has
+  acknowledged it. Bump `nx-gs-db-migrations` to 0.5.0 with the core: its changesets add the column this needs.
+- **Fishing gear catalog.** New game data providers `FishingBaitProvider`, `FishingRodProvider` and
+  `FishingShotProvider` (entities `fishingbait`, `fishingrod`, `fishingshot`). Optional: a server without fishing
+  registers none. A host that implements them registers each in `META-INF/services` and returns `null` from
+  `snapshot()` until its data is loaded.
+- **An empty game data snapshot now deletes.** A registered provider that returns an empty collection (or an empty
+  `Optional` from `GearScoreRulesetProvider`) makes the platform delete every row of that entity for the server.
+  Return `null` while your data is not loaded, never an empty collection.
+
 ## nx-gs-adapter-api 0.119.0: `clanId` and `allianceId` on chat messages
 
 **Breaking for Java code only.** `ChatMetadataKeys.CLAN_ID` and `ChatMetadataKeys.ALLIANCE_ID` are removed, with no

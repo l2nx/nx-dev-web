@@ -32,7 +32,9 @@ Always. It brings `nx-gs-adapter-api`, `nx-gs-kafka` and `nx-gs-commons` transit
 - Publishes the events the host sends through the adapter, from one bounded queue.
 - Delivers platform commands to the handlers the host registers and sends back their results.
 - Runs a shared IO pool for blocking work of modules and handlers, so that work never runs on the game thread.
-- Runs app sessions when the host provides an `OfflineSessionHost`.
+- Runs app sessions when the host provides an `OfflineSessionHost`. It keeps the platform's view of them true: it
+  publishes the ids of every open session every 60 seconds and republishes a session end until the platform has
+  acknowledged it.
 - Owns the per-server [app settings file](/adapter/configuration/#app-settings-file) `l2nx-app.properties`: reads
   it, validates it as a whole and reloads it about every 5 seconds without a restart.
 - Publishes the server's settings to the platform: the app settings and, when the host provides a

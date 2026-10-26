@@ -41,7 +41,14 @@ Java 8. Тег релиза `api/vX.Y.Z`. Версии — на
 Провайдеры игровых данных: `ItemTemplateProvider`, `NpcTemplateProvider`, `SkillProvider`, `RecipeTemplateProvider`,
 `ArmorSetTemplateProvider`, `SoulCrystalTemplateProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
 `InstanceTemplateProvider`, `GearScoreRulesetProvider`, `ItemOptionProvider`, `AugmentationTargetGroupProvider`,
-`LifeStoneProvider`.
+`LifeStoneProvider`, `FishingBaitProvider`, `FishingRodProvider`, `FishingShotProvider`.
+
+Пока данные не загружены, провайдер возвращает `null` из `snapshot()`. Пустая коллекция (пустой `Optional` у
+`GearScoreRulesetProvider`) значит, что каталог пуст, и платформа удаляет все строки этой сущности для сервера.
+
+Три провайдера рыбалки описывают снаряжение, которое принимает сервер: каждый предмет, который он берёт как
+наживку, удочку или рыболовный заряд, с шансом, временем рыбалки и грейдом, которые его рыбалка использует для этого
+предмета. Сервер без рыбалки не регистрирует ни одного.
 
 Три провайдера аугментации описывают каталог, из которого сервер роллит: все опции предметов, загруженные движком
 (у опций аугментации и заточки одно пространство id), группы шаблонов предметов с одинаковым роллом и каждый life
@@ -73,7 +80,18 @@ stone с группами, которые он принимает, и вероя
 Неудачное чтение из базы завершает свой future исключением; хост отклоняет старт как временно недоступный.
 `findOpen` (в памяти) перечисляет все открытые сессии типа, включая ждущие восстановления: хост вызывает его прямо
 перед `hostReady()`, чтобы зарезервировать их лимиты и споты. Каждая `OfflineSession` несёт `returnThresholdMs`, с
-которым начата.
+которым начата. Типы сессий лежат в `app.l2nx.gs.adapter.api.spi.model.session`.
+
+`NxAppSessions.check(characterId, spotPool, spotId)` — режим проверки старта: он выполняет собственные проверки
+старта адаптера (одна открытая сессия на персонажа, свободный спот) и отвечает `AppSessionCheckOutcome` (`ALLOWED`,
+`CHARACTER_BUSY` с открытой сессией, `SPOT_TAKEN`, `UNAVAILABLE`), ничего не записывая, не занимая спот и не вызывая
+`OfflineSessionHost`. На нём стоят команды проверки (`CheckOfflineFishingCommand`): хост проходит свои шаги старта до
+первого побочного эффекта и вызывает `check` там, где старт вызывает `start`, поэтому проверка и старт никогда не
+отвечают по-разному.
+
+Каждая команда несёт `initiator` (`CommandInitiator`): кто её вызвал — пользователь платформы, необязательные метка,
+email и IP запроса. Core проверяет его до вызова обработчика; правила хоста читают мастер-аккаунт из
+`initiator.getUserId()`, а IP запроса из `initiator.getIp()`.
 
 ## Возрождение мёртвого персонажа
 

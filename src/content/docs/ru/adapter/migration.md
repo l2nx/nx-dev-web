@@ -14,6 +14,50 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.120.0, nx-gs-adapter-core 0.51.0, nx-gs-gd-sync-core 0.16.0, nx-gs-db-migrations 0.5.0: инициатор команды, проверки сессий, рыболовное снаряжение
+
+**Ломает совместимость.** Обновите api, core и gd-sync вместе и переключите хост одним релизом.
+
+- **Инициатор команды.** Каждая команда несёт обязательный `initiator` (`CommandInitiator`): кто её вызвал (`source`:
+  `user` или имя отправившего сервиса платформы; `userId` задан ровно для пользователя; необязательные `label`,
+  `email`, `ip`). У `NxCommand` есть `getInitiator()`, его принимают все конструкторы и билдеры команд. Core отклоняет
+  команду без корректного инициатора с `VALIDATION_FAILED` до вызова вашего обработчика, а команде `OwnerVerified`
+  нужен ещё источник `user`, поэтому обработчик читает корректный инициатор и не перепроверяет его. Его `ip` уже прошёл
+  `ClientIdentifiers`. Код, который сам собирает команды (тесты, утилиты), передаёт инициатор.
+- **Удалены `masterAccountId` и `initiatorIp`** из `StartOfflineFishingCommand`, `StopOfflineFishingCommand`,
+  `ReviveCharacterCommand` и команд старта частного магазина (`StartPrivateStoreCommand`), deprecated-копии нет.
+  Мастер-аккаунт читайте из `initiator.getUserId()`, IP запроса из `initiator.getIp()` и передавайте их в
+  `AppSessionStartRequest`, как раньше. `BanCommand.issuedBy` и `SendCaptchaCommand.issuedBy` остаются: это имя,
+  которое запись показывает в игре, а не атрибуция.
+- **Перенос пакета.** `AppSessionStartRequest`, `AppSessionStartOutcome`, `ClientLoginOutcome`, `OfflineSession` и
+  `OfflineSessionPlacement` переехали из `app.l2nx.gs.adapter.api.spi.model` в
+  `app.l2nx.gs.adapter.api.spi.model.session`. Замените импорты; больше в них ничего не изменилось.
+- **Проверки сессий.** `NxAppSessions.check(characterId, spotPool, spotId)` отвечает `AppSessionCheckOutcome`
+  (`ALLOWED`, `CHARACTER_BUSY` с открытой сессией, `SPOT_TAKEN`, `UNAVAILABLE`), ничего не записывая, не занимая спот и
+  не вызывая `OfflineSessionHost`. Новая `CheckOfflineFishingCommand` (результат `AppSessionCheckResult`) спрашивает,
+  стартовала бы рыбалка с этими входными данными сейчас: пройдите свои шаги старта до первого побочного эффекта и
+  вызовите `check` там, где старт вызывает `start`. Отказ — успешная проверка (`OK`, `allowed = false`). Пока вы не
+  зарегистрировали обработчик, адаптер отвечает на команду как на неподдерживаемую. Код, который сам реализует
+  `NxAppSessions`, добавляет `check`.
+- **Новые значения отказов.** `AlreadyActiveScope.IP` (ваш лимит по IP, считается по `initiator.ip` и недавнему IP
+  игрового клиента персонажа; отсутствующий IP ничего не ограничивает) и значения `AppSessionRefusalReason`
+  `NO_FISHING_SHOT`, `INVALID_FISHING_SHOT` и `FISHING_SHOT_GRADE_MISMATCH` для нового необязательного
+  `StartOfflineFishingCommand.fishingShotItemId`. Отказ `DAILY_LIMIT` теперь может нести `retryAt` — момент сброса
+  суточного лимита; если ваша сборка этот момент не знает, не передавайте его.
+- **`ActivityMetadataKey`** называет ключи `metadata` строки activity usage (`elapsed`, `remaining`, `rodItemId`,
+  `baitItemId`, `fishingShotItemId`, `spotPool`, `spotId`); пишите `key()` вместо своих строк. Словарь остаётся
+  открытым.
+- **Снимок открытых сессий.** Core публикует `AppSessionsSnapshotEvent` (id всех открытых сессий приложения сервера)
+  раз в 60 с и при старте модуля app-sessions и переотправляет завершение сессии, пока платформа его не подтвердит. На
+  хосте поднимите `nx-gs-db-migrations` до 0.5.0 вместе с core: нужную колонку добавляют его changeset-ы.
+- **Каталог рыболовного снаряжения.** Новые провайдеры игровых данных `FishingBaitProvider`, `FishingRodProvider` и
+  `FishingShotProvider` (сущности `fishingbait`, `fishingrod`, `fishingshot`). Необязательны: сервер без рыбалки не
+  регистрирует ни одного. Хост, который их реализует, регистрирует каждый в `META-INF/services` и возвращает `null`
+  из `snapshot()`, пока его данные не загружены.
+- **Пустой снимок игровых данных теперь удаляет.** Зарегистрированный провайдер, вернувший пустую коллекцию (или
+  пустой `Optional` из `GearScoreRulesetProvider`), заставляет платформу удалить все строки этой сущности для сервера.
+  Пока данные не загружены, возвращайте `null`, а не пустую коллекцию.
+
 ## nx-gs-adapter-api 0.119.0: `clanId` и `allianceId` в сообщениях чата
 
 **Ломает только Java-код.** `ChatMetadataKeys.CLAN_ID` и `ChatMetadataKeys.ALLIANCE_ID` удалены, deprecated-копии нет.
