@@ -75,7 +75,8 @@ start, stop and per-tick bookkeeping ([the morning paper](https://blog.acolyer.o
 On the JVM it underlies Netty's `HashedWheelTimer`, Kafka and Agrona's
 [`DeadlineTimerWheel`](https://www.javadoc.io/static/org.agrona/agrona/1.5.0/org/agrona/DeadlineTimerWheel.html).
 A wheel is itself a tick with the slot width as its resolution, and events within one slot are not ordered by
-deadline unless sorted.
+deadline unless sorted. Zero-Tick measured a wheel against a binary heap for its partitions and keeps the heap (see
+[Zero-Tick Engine](/core/zero-tick-engine/)).
 
 The alternative, a timer per entity on a shared thread pool, scatters game logic over many threads. That only works
 with locks around every shared object, and the order in which two timers touch the same target is not defined.

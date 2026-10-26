@@ -185,13 +185,20 @@ defaults are starting points to be tuned under load.
 | `l2nx.engine.pass-budget`          | `50ms`        | a longer pass is counted and logged with its phase breakdown                                                    |
 | `l2nx.engine.trigger-depth`        | `8`           | generations of same-pass follow-up work drained in one pass                                                     |
 | `l2nx.engine.packets-per-pass`     | `16`          | items one ready input source gives per pass                                                                     |
-| `l2nx.engine.overdue-per-pass`     | `4096`        | overdue timers one wheel fires per pass; the rest waits for the next pass                                       |
-| `l2nx.engine.owed-ticks-per-pass`  | `10`          | ticks one late periodic task catches up per pass                                                                |
+| `l2nx.engine.overdue-per-pass`     | `4096`        | overdue timers one timer queue fires per pass; the rest waits for the next pass                                 |
 | `l2nx.engine.blocked-pass-warning` | `2s`          | a longer pass gets the loop thread's stack logged, once per multiple                                            |
 | `l2nx.engine.blocked-pass-exit`    | not set (off) | a pass running longer exits the server so its supervisor restarts it; set it longer than `blocked-pass-warning` |
 
 Durations are whole milliseconds, at least `1ms`; counts are positive. A wrong value stops the server at startup.
 Stopping the loops is bounded by the standard `spring.lifecycle.timeout-per-shutdown-phase` (30 seconds by default).
+
+The periodic systems of the world loop take their cadences from their own keys:
+
+| Key                            | Default | Meaning                                                  |
+| ------------------------------ | ------- | -------------------------------------------------------- |
+| `l2nx.ai.think-cadence`        | `1s`    | think step of every monster and other attackable with AI |
+| `l2nx.movement.player-cadence` | `50ms`  | position updates of moving players                       |
+| `l2nx.movement.npc-cadence`    | `100ms` | position updates of every other moving creature          |
 
 A watchdog thread checks the running pass every 500 ms. A pass that never ends (an endless loop in a script) freezes
 the world, and the world cannot save from a frozen loop: `blocked-pass-exit` gives up the changes since the last save

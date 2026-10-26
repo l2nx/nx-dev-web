@@ -76,7 +76,8 @@ for moving, shooting, or throwing»
 построены `HashedWheelTimer` в Netty, Kafka и
 [`DeadlineTimerWheel`](https://www.javadoc.io/static/org.agrona/agrona/1.5.0/org/agrona/DeadlineTimerWheel.html) в
 Agrona. Сам timer wheel тоже тик с разрешением в ширину слота, и события внутри одного слота не упорядочены по
-дедлайну, пока их не отсортировать.
+дедлайну, пока их не отсортировать. Zero-Tick сравнил wheel с двоичной кучей для своих партиций и оставил кучу (см.
+[Zero-Tick Engine](/ru/core/zero-tick-engine/)).
 
 Альтернатива — таймер на каждую сущность в общем пуле потоков — разносит игровую логику по множеству потоков. Это
 работает только с блокировками вокруг каждого общего объекта, а порядок, в котором два таймера трогают одну цель, не

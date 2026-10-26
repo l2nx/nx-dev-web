@@ -20,7 +20,7 @@ tick models, mature MMO server cores, ECS, spatial scaling and persistence, is o
 - **One writer per piece of state.** Every piece of mutable game state has exactly one owning thread at a time. Game
   state has no locks and no concurrent collections.
 - **Time and randomness are inputs.** Game code reads the clock and the random generator of its partition, never the
-  system clock or a global random. A partition can then be replayed and tested.
+  system clock or a global random. A partition is then deterministic and testable.
 - **Industry practice over invention.** The shape below is what authoritative online games converge on. Custom code
   is written only where Lineage 2 needs it.
 - **Every step keeps a playable server.** The imported code is reworked in place, not rewritten from scratch.
@@ -83,13 +83,15 @@ its inbox, the next timer deadline, the next due periodic system.
   sessions round-robin, with a per-pass limit, so a flooding client delays only itself. In Mobius two packets of one
   client could run concurrently or out of order, for example a trade confirmation against an item move. That class
   of race and duplication disappears.
-- **Exact deadlines.** Timers live on one timer wheel per partition and carry absolute deadlines. A repeating action
-  schedules its next run from its previous deadline, not from "now", so an attack every 333 ms stays 333 ms on
-  average instead of drifting. Cancelling a timer is free: a stale entry is simply ignored when it fires.
+- **Exact deadlines.** Timers live in a timer queue per partition and time base and carry absolute deadlines. A
+  repeating action schedules its next run from its previous deadline, not from "now", so an attack every 333 ms stays
+  333 ms on average instead of drifting. Cancelling a timer costs a flag: a cancelled or stale entry is skipped when
+  it comes up.
 - **No catch-up bursts.** A pass that runs late is followed by the next one as soon as possible; missed periodic runs
   are not replayed in a burst, which is how loops spiral under load.
-- **Replayable.** A partition records its inputs, the random seed and the clock readings, so an incident can be
-  replayed against the same build and turned into a test.
+- **Deterministic.** Time and randomness come only from the pass, with a seeded generator per partition, so recording
+  a partition's inputs will let an incident be replayed against the same build and turned into a test (planned,
+  [#44](https://github.com/l2nx/nx-l2/issues/44)).
 
 One pass runs in a fixed order: inbox, due deadlines, due periodic systems, deferred side effects, replication, and
 one network flush per connection.
@@ -117,7 +119,7 @@ a clock policy rather than a redesign.
 
 ## Effects
 
-Buffs, debuffs, toggles and periodic effects run on absolute deadlines on the partition timer wheel. A 20-minute buff
+Buffs, debuffs, toggles and periodic effects run on absolute deadlines in the partition timer queue. A 20-minute buff
 lasts exactly 20 minutes, not "20 minutes plus up to a second" as with a once-per-second scan. There is no task per
 effect and no global scan. Applying twenty buffs marks the character's stats dirty once, so they are recalculated and
 sent once per pass instead of twenty times, which matters most in sieges.
@@ -256,3 +258,6 @@ world loop drains the session queues, loads the world in its startup pass before
 game timer; the Mobius `ThreadPool` is gone, and work without game state runs on a Spring task scheduler. The legacy
 database calls still run on the world loop until step 4. The step is accepted by the bot crowd PvP load run, and an
 overrun is fixed by profiling, not by going back to shared thread pools.
+
+Step 7 has started: AI think and movement run as periodic systems, and a monster's drops and experience are side
+effects of its death.

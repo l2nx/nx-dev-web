@@ -44,9 +44,9 @@ builds.
 
 Where it slows down, in which phase, in which pass: Prometheus metrics out of the box, ready for your Grafana.
 
-### Every bug reproducible
+### Deterministic by design
 
-A past fight can be replayed step by step: time and randomness come only from the pass, and the seed is logged.
+A pass is deterministic: time and randomness come only from the pass, and the seed is logged, so the same inputs give the same fight. Recording live inputs for replay is on the roadmap.
 
 ## Zero-Tick vs classic builds
 
@@ -55,7 +55,7 @@ A past fight can be replayed step by step: time and randomness come only from th
 | Wakes only on events, no polling     |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 | No locks on game state, one writer   |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✓       |
 | Dupe-proof by design                 |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      —       |
-| Deterministic replay                 |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
+| Deterministic passes (seeded RNG)    |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 | Built-in Prometheus metrics          |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 | Pass budget with per-phase breakdown |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 
@@ -100,14 +100,17 @@ flowchart TB
 ```
 
 - **One clock reading per pass.** Every mechanic in the pass sees the same "now", which is what makes a pass
-  replayable.
+  reproducible.
 - **Deterministic order.** Due timers run in `(deadline, sequence)` order; the sequence keeps registration order for
-  equal deadlines. On an equal deadline a periodic tick (`TICK`) runs before the end of its effect (`END`), so the last
-  damage tick of a poison is never lost to the poison expiring.
+  equal deadlines.
 - **Bursts share a pass.** A pass has a minimum distance to the next one (`pass-min`, see
   [operations](/core/operations/)), so a burst of input arriving within it is handled in one pass instead of many.
 - **Same-pass follow-ups.** Work triggered inside a pass (a triggered skill, a death caused by a damage tick) runs in
   the same pass, up to a depth limit, so a trigger chain cannot loop forever.
+- **Side effects in a fixed order.** Deaths, drops and rewards are deferred to the side-effect phase and run there
+  first in, first out; work they defer runs after them in the same phase. A monster's death takes a snapshot of who
+  hit it and for how much, so the drop, the event drop and the experience that follow are decided by that fight, not
+  by whatever the aftermath of the death has changed.
 
 ### Zero-Tick, ticks and ECS
 
@@ -121,7 +124,7 @@ components a system needs.
 | When work runs        | fixed-rate tasks and ticks                       | every frame                                                          | on input, a due deadline or a due periodic system                                               |
 | Work per wake-up      | all due tasks, even empty ones                   | all entities with the component, O(entities) per tick                | only what is affected, O(events)                                                                |
 | Threading             | shared pool plus `synchronized`: races and dupes | the scheduler runs systems in parallel by component access, no locks | one writer thread per partition, partitions in parallel                                         |
-| Order and determinism | up to the OS scheduler                           | deterministic with a fixed step                                      | one "now" per pass, `(deadline, sequence)` order, replay                                        |
+| Order and determinism | up to the OS scheduler                           | deterministic with a fixed step                                      | one "now" per pass, `(deadline, sequence)` order                                               |
 | Strong side           | simple and familiar                              | dense work every frame, cache-friendly iteration                     | sparse work: most objects idle, rare precise events such as buffs, cooldowns, respawns and hits |
 | Weak side             | races, idle tasks, no visibility                 | empty ticks, latency up to one step, every script rewritten          | dense per-frame work has to go to periodic systems                                              |
 
@@ -131,9 +134,9 @@ exactly when one of them is due.
 
 **A hybrid, not anti-ECS.**
 
-- **Sparse things are event-driven:** effects, cooldowns, respawns and input run on the timer wheel and the inbox.
-- **Dense things are ECS-style periodic systems:** movement and visibility iterate their components at their own
-  cadence, inside the same pass and on the same writer thread.
+- **Sparse things are event-driven:** effects, cooldowns, respawns and input run on the timer queue and the inbox.
+- **Dense things are ECS-style periodic systems:** AI think, movement and (planned) visibility iterate their
+  components at their own cadence, inside the same pass and on the same writer thread.
 - **The data is ECS-style:** state lives in components owned by systems, with data-oriented storage where the profiler
   points.
 - **Why not pure ECS:** there is no public precedent of a classic MMO server core on pure ECS, about 310 thousand lines
@@ -152,27 +155,30 @@ In ECS and tick engines, doing work is the default. In Zero-Tick it is the excep
 - **Global services** (clans, mail, auction, castles and the siege schedule) are single writers too, each with its own
   inbox. Partitions send them commands and read their state from published snapshots.
 
-**Massive world battles don't slow down the Olympiad.** The world partition has a loop thread of its own, and there is
+**Massive world battles don't slow down the Olympiad.** Every partition has its own loop thread, and there is
 no global barrier between partitions, so a siege that fills the world pass does not hold up a match. The condition is
-enough CPU cores: instances and matches share the remaining loop threads.
+enough CPU cores.
 
-### Timer wheel
+### Timer queue
 
-Timers live on Agrona's `DeadlineTimerWheel`, two per partition (game time and wall-clock time), with a 1 ms tick.
-One turn of the wheel holds 1024 ticks, about a second. A deadline in a later turn waits in that turn's bucket, and
-the occupied turns are ordered by a fastutil `LongHeapPriorityQueue`; a bucket enters the wheel whole when the cursor
-reaches its turn.
+Timers live in two queues per partition (game time and wall-clock time): a JDK binary heap ordered by deadline, then
+registration order. The head is the earliest deadline, so an idle partition holding thousands of timers minutes ahead
+(respawns, despawns, long buffs) runs no pass until the first of them is due.
 
-The result is that `nextDeadline()` is always exact. An idle partition holding thousands of timers minutes ahead
-(respawns, despawns, long buffs) runs no pass until the first of them is due. Cancelling a timer costs nothing on the
-wheel: a stale entry is ignored when it fires, and it does not use up the overdue cap below.
+Cancelling a timer flags it; the flagged entry is skipped when it comes up, and when flagged entries are half the
+heap it is rebuilt without them. Entity timers also lapse by generation, so a cleanse or a death costs nothing per
+timer. Neither uses up the overdue cap below.
 
-The wheel does not order timers inside one tick, so a pass sorts the due timers by due time, then deadline, then
-registration order. Timers that are overdue (their deadline is older than `pass-min` before the pass) run up to
-`overdue-per-pass` per wheel and pass; the rest keeps its order for the next pass. A timer scheduled at or before the
-last run keeps its deadline but becomes due 1 ms after that run, behind everything already due, so a handler that
-re-arms itself at an overdue deadline cannot starve later timers under the cap. If the wall clock is set back, no
+A repeating timer keeps its phase and never catches up: after a late pass it runs once and its next deadline is the
+next point of its period grid. Timers that are overdue (their deadline is older than `pass-min` before the pass) run up
+to `overdue-per-pass` per queue and pass; the rest keeps its place for the next pass. A timer armed while timers fire
+never fires in the same pass: its deadline moves to at least 1 ms after the pass, behind everything already due, so a
+handler re-arming itself can neither spin one pass nor starve the timers behind it. If the wall clock is set back, no
 deadline fires early.
+
+The queue replaced a hashed timer wheel (Agrona's `DeadlineTimerWheel` with per-turn buckets). The wheel did not order
+timers within a tick and could not tell its earliest deadline, so it carried buckets, a bitmap and a sort per tick; a
+randomized differential test now runs the queue against a reference model on every build.
 
 ### Input signal
 
@@ -182,30 +188,29 @@ deadline fires early.
   is never left in the queue unsignalled.
 - **Strict arrival order per client,** with round-robin across sessions and a per-pass limit, so a flooding client
   delays only itself.
-- **A failing item costs only itself.** The item is taken off the queue, recorded and then run; a handler that throws
+- **A failing item costs only itself.** The item is taken off the queue and then run; a handler that throws
   is reported and the rest of the pass goes on.
-- **Recording never blocks game work.** If the recorder fails, the failure is reported and the work still runs; only
-  the replay of that pass is incomplete.
 
 ### Benchmarks
 
 Measured on an AMD Ryzen 5 5600X, JDK 25, Linux in Docker on WSL2, which is a virtual machine; absolute numbers on
 bare metal differ, the ratios are what matters.
 
-**Cost per timer,** scheduled and fired in a batch, ns per timer, with 1 000 / 100 000 / 1 000 000 other timers
-pending:
+**Cost per timer,** scheduled and fired in a batch of one pass, ns per timer, with 1 000 / 100 000 / 1 000 000 other
+timers pending. The queue and the wheel it replaced were measured interleaved in one session on the same machine,
+round by round; this is the first round, which ran on a quiet machine:
 
-| Scheduler                                                         | 1 000 | 100 000 | 1 000 000 |
-| ----------------------------------------------------------------- | ----: | ------: | --------: |
-| Zero-Tick timer wheel                                             |   253 |     254 |       255 |
-| `ScheduledThreadPoolExecutor`, 1 worker                           |   436 |     501 |       569 |
-| `ScheduledThreadPoolExecutor`, 4 workers                          |   549 |     623 |       739 |
-| `ScheduledThreadPoolExecutor`, L2J Mobius default (4 per CPU, 24) |  4104 |    4215 |      3598 |
+| Scheduler                                         | 1 000 | 100 000 | 1 000 000 |
+| ------------------------------------------------- | ----: | ------: | --------: |
+| Zero-Tick timer queue                             |    85 |     134 |       169 |
+| Zero-Tick timer queue, every second one cancelled |    89 |     142 |       174 |
+| Timer wheel it replaced                           |   581 |     387 |       361 |
 
-The wheel costs about 255 ns per timer whether 1 000 or 1 000 000 others are pending: about twice as cheap as a pool
-tuned at its best (one worker) and 14–17 times cheaper than the L2J Mobius default of four workers per CPU, whose
-workers fight over one queue lock. More workers make the pool slower, not faster; the same contention makes the
-Mobius figure vary widely from run to run.
+In a pass-sized batch the heap is not slower than the wheel at any size. The wheel figure at 1 000 pending carries an
+error of about ±1 050 ns; the second round of the wheel gave 374 / 351 / 659 ns. A second round of the queue ran under
+CPU load from other processes and is not comparable. Scheduling and firing one timer at a time is the heap's weak
+case: it costs 73 / 262 / 3 143 ns against 78 / 224 / 1 143 ns of the wheel, since the sift over a million entries
+misses the cache. Cancelling half of a batch adds no visible cost.
 
 **Idle world:** no player online, each NPC holds a respawn-like timer due about once a minute (30–90 s).
 
@@ -230,6 +235,9 @@ that number small. A tick wakes 10 times a second regardless and is the cheapest
 Zero-Tick fires 0.9 ms late at p50 against 50 ms on a 100 ms tick. The Mobius pool fires closer, about 0.1 ms, at
 about eleven times the CPU per timer; for a game, a millisecond is below perception.
 
+The idle and lateness tables were measured on the previous build with the timer wheel. A rerun on the timer queue
+gave the same wake-ups per second (16 and 148) and a lateness of about 1.1 ms at p50 and 1.7 ms at p99.
+
 How to run:
 
 ```sh
@@ -246,7 +254,7 @@ Run one scheduler per JVM with `scheduler=ZERO_TICK`, `MOBIUS_STPE` or `TICK_100
 
 | Family                          | Execution model                                                                                         | Polling periods                                                                                                        | Locking                                                   | Metrics                                   | Determinism                             |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------- | --------------------------------------- |
-| Zero-Tick                       | one event loop per partition, timer wheel, single writer                                                | none: wakes on input, deadline or due system                                                                           | none on game state                                        | Micrometer per pass and phase, Prometheus | seeded RNG, clock per pass, replay      |
+| Zero-Tick                       | one event loop per partition, timer queue, single writer                                                | none: wakes on input, deadline or due system                                                                           | none on game state                                        | Micrometer per pass and phase, Prometheus | seeded RNG, clock per pass              |
 | L2J Mobius                      | shared `ScheduledThreadPoolExecutor` (4 threads per CPU) plus an instant pool, fixed-rate task managers | AI 1000 ms, movement 100 ms (creatures) and 50 ms (players), game time 10 ticks/s, decay, respawn and autosave 1000 ms | about 220 `synchronized` sites, region activity switching | none; a deadlock watcher                  | `ThreadLocalRandom`, no seed, no replay |
 | aCis                            | one scheduled pool (one thread per CPU) on virtual threads, a fixed-rate task per object                | AI 1000 ms                                                                                                             | about 150 `synchronized` sites                            | none                                      | none                                    |
 | L2J Server                      | four scheduled pools (effects, general, AI, events), a game-time thread                                 | 10 ticks/s for movement, AI task per attackable 1000 ms                                                                | `synchronized` in about 110 files                         | none                                      | none                                    |
@@ -263,7 +271,7 @@ replays a session.
   next pass, and its result in the world's next pass after that. The order is deterministic, but it is not
   simultaneous.
 - **An overloaded pass slows its own partition.** A partition is one thread, so a heavy pass delays everything in it.
-  One thread per partition has a big margin: a pass with 100 000 live timers takes about 178 µs against a 50 ms
+  One thread per partition has a big margin: a pass with 100 000 live timers takes about 170 µs against a 50 ms
   budget, and EVE Online runs one thread per solar system. If a siege needs more, these steps are taken in order and
   only on measurements:
   1. Move everything that does not change state off the world thread: the persistence executor, the flush on Netty
@@ -283,12 +291,13 @@ replays a session.
 - **Open work:**
   - input ordered against due timers by arrival time ([#45](https://github.com/l2nx/nx-l2/issues/45));
   - replay recording in production ([#44](https://github.com/l2nx/nx-l2/issues/44)).
-- **The open world is a single writer on the world loop** and all its game timers run on the loop API, but the
-  imported Mobius subsystems still schedule their own work as fixed-rate tasks. The
+- **The open world is a single writer on the world loop** and all its game timers run on the loop API. AI think and
+  movement already run as periodic systems, but the other imported Mobius subsystems still schedule their own work as
+  fixed-rate tasks. The
   [migration path](/core/architecture/#migration-path) shows the rest of the order: subsystems move to partition
   deadlines one at a time, and instances and olympiad matches get their own partitions.
 
 ## Read more
 
 - [Architecture](/core/architecture/): partitions, the entity model, replication, persistence and the migration path.
-- [Engine research](/core/engine-research/): tick models, timer wheels, actors and how mature MMO servers are built.
+- [Engine research](/core/engine-research/): tick models, timer wheels and queues, actors and how mature MMO servers are built.
