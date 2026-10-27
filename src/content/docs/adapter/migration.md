@@ -14,6 +14,13 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.122.0: private buy store slots in the runtime sync
+
+**Breaking (source).** The canonical constructor of `CharacterRuntimeDto` takes a new last parameter,
+`privateStoreBuySlots` (`Integer`): the maximum number of lines a private buy store of the character may hold right
+now, independent of `privateStoreSellSlots`. A provider computes it from the same rules as the sell limit and passes
+`null` when it does not report it. Code that builds `CharacterRuntimeDto` itself (providers, tests) adds the argument.
+
 ## nx-gs-adapter-api 0.120.0, nx-gs-adapter-core 0.51.0, nx-gs-gd-sync-core 0.16.0, nx-gs-db-migrations 0.5.0: command initiator, session checks, fishing gear
 
 **Breaking.** Update the api, the core and gd-sync together and switch the host in one release.
