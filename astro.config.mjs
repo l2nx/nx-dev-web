@@ -119,6 +119,16 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Wiki',
+          items: [
+            {
+              label: 'Articles',
+              translations: { ru: 'Статьи' },
+              items: ['wiki/articles/ai-translation'],
+            },
+          ],
+        },
+        {
           label: 'L2NX.TOP',
           items: ['top/overview', 'top/vote-link', 'top/webhooks', 'top/getting-access'],
         },

@@ -22,3 +22,10 @@
   /* Starlight's 45rem leaves comparison tables and diagrams cramped on desktop; narrow screens still shrink it. */
   --sl-content-width: 60rem;
 }
+
+/* The home hero is a title and one line; Starlight's up-to-10rem block padding leaves a gap before the section list. */
+@media (min-width: 50rem) {
+  .hero {
+    padding-block: 2.5rem 1rem;
+  }
+}

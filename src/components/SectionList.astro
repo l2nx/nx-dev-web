@@ -1,0 +1,91 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+import type { StarlightIcon } from '@astrojs/starlight/types';
+import type { ImageMetadata } from 'astro';
+
+interface Section {
+  title: string;
+  href: string;
+  description: string;
+  image?: ImageMetadata;
+  /** Raw SVG markup, inlined so `currentColor` strokes take the accent. */
+  svg?: string;
+  icon?: StarlightIcon;
+}
+
+interface Props {
+  sections: Section[];
+}
+
+const { sections } = Astro.props;
+---
+
+<ul class="sections not-content">
+  {
+    sections.map(({ title, href, description, image, svg, icon }) => (
+      <li>
+        <a href={href}>
+          <span class="mark">
+            {image && <img src={image.src} alt="" width="32" height="32" />}
+            {svg && <Fragment set:html={svg} />}
+            {icon && <Icon name={icon} size="1.5rem" />}
+          </span>
+          <span class="text">
+            <span class="title">{title}</span>
+            <span class="description">{description}</span>
+          </span>
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .sections {
+    list-style: none;
+    padding: 0;
+    margin: 0 -1rem 2.5rem;
+    display: grid;
+    gap: 0.25rem;
+  }
+  a {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: var(--sl-color-white);
+  }
+  a:hover {
+    background: var(--sl-color-gray-6);
+  }
+  .mark {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: var(--sl-color-text-accent);
+  }
+  .mark :global(svg) {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .mark img {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+  }
+  .text {
+    display: grid;
+  }
+  .title {
+    font-weight: 600;
+    font-size: var(--sl-text-lg);
+  }
+  .description {
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+  }
+</style>

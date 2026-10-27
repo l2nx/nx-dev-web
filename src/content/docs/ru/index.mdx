@@ -3,45 +3,34 @@ title: L2NX Dev Portal
 description: Документация для разработчиков платформы L2NX для проектов игровых серверов Lineage 2.
 template: splash
 hero:
-  title: Интеграция с L2NX
-  tagline: L2NX — платформа для проектов игровых серверов Lineage 2. Подключите игровой сервер, принимайте голоса на l2nx.top и свяжите свой сайт с API платформы.
-  actions:
-    - text: Подключить игровой сервер
-      link: /ru/adapter/overview/
-      icon: right-arrow
-      variant: primary
-    - text: Integration API
-      link: /ru/api/overview/
-      icon: right-arrow
-      variant: minimal
+  title: L2NX Dev Portal
+  tagline: Документация платформы L2NX для проектов игровых серверов Lineage 2.
 ---
 
-import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkButton } from '@astrojs/starlight/components';
+import SectionList from '../../../components/SectionList.astro';
+import cpu from '../../../assets/sections/cpu.svg?raw';
+import plug from '../../../assets/sections/plug-connected.svg?raw';
+import top from '../../../assets/sections/top.png';
+import wiki from '../../../assets/sections/wiki.svg?raw';
 
-## С чего начать
+<SectionList
+  sections={[
+    { title: 'L2NX Core', href: '/ru/core/overview/', description: 'Сервер Lineage 2 с открытым кодом на L2J Mobius со встроенным L2NX.', svg: cpu },
+    { title: 'GS Adapter', href: '/ru/adapter/overview/', description: 'Java-библиотека, которая подключает игровой сервер к L2NX.', svg: plug },
+    { title: 'Wiki', href: '/ru/wiki/articles/ai-translation/', description: 'Вики вашего проекта.', svg: wiki },
+    { title: 'l2nx.top', href: '/ru/top/overview/', description: 'Рейтинг серверов и голосование: ссылки для голосования, вебхук vote.created и лента голосов.', image: top },
+    { title: 'Integration API', href: '/ru/api/overview/', description: 'HTTP API для вашего сайта и инструментов: хосты, API keys, scopes, ошибки и rate limits.', icon: 'seti:json' },
+  ]}
+/>
 
-<CardGrid>
-  <LinkCard
-    title="L2NX Core"
-    href="/ru/core/overview/"
-    description="Сервер Lineage 2 с открытым кодом на L2J Mobius со встроенным L2NX: состояние, быстрый старт и лицензии."
-  />
-  <LinkCard
-    title="GS Adapter"
-    href="/ru/adapter/overview/"
-    description="Java-библиотека, которая подключает игровой сервер к L2NX: установка, настройка, модули и релизы."
-  />
-  <LinkCard
-    title="l2nx.top"
-    href="/ru/top/overview/"
-    description="Рейтинг серверов и голосование: ссылки для голосования, вебхук vote.created и лента голосов."
-  />
-  <LinkCard
-    title="Integration API"
-    href="/ru/api/overview/"
-    description="HTTP API для вашего сайта и инструментов: хосты, API keys, scopes, ошибки и rate limits."
-  />
-</CardGrid>
+## Интеграция с L2NX
+
+L2NX — платформа для проектов игровых серверов Lineage 2. Подключите игровой сервер, принимайте голоса на l2nx.top и
+свяжите свой сайт с API платформы.
+
+<LinkButton href="/ru/adapter/overview/" icon="right-arrow">Подключить игровой сервер</LinkButton>
+<LinkButton href="/ru/api/overview/" variant="minimal" icon="right-arrow">Integration API</LinkButton>
 
 ## Нужен доступ?
 

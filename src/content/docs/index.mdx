@@ -3,45 +3,34 @@ title: L2NX Dev Portal
 description: Developer documentation for the L2NX platform for Lineage 2 game server projects.
 template: splash
 hero:
-  title: Build on L2NX
-  tagline: L2NX is a platform for Lineage 2 game server projects. Connect your game server, take votes on l2nx.top and integrate your site with the platform API.
-  actions:
-    - text: Connect a game server
-      link: /adapter/overview/
-      icon: right-arrow
-      variant: primary
-    - text: Integration API
-      link: /api/overview/
-      icon: right-arrow
-      variant: minimal
+  title: L2NX Dev Portal
+  tagline: Documentation for the L2NX platform for Lineage 2 game server projects.
 ---
 
-import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkButton } from '@astrojs/starlight/components';
+import SectionList from '../../components/SectionList.astro';
+import cpu from '../../assets/sections/cpu.svg?raw';
+import plug from '../../assets/sections/plug-connected.svg?raw';
+import top from '../../assets/sections/top.png';
+import wiki from '../../assets/sections/wiki.svg?raw';
 
-## Start here
+<SectionList
+  sections={[
+    { title: 'L2NX Core', href: '/core/overview/', description: 'An open-source Lineage 2 server on L2J Mobius with L2NX built in.', svg: cpu },
+    { title: 'GS Adapter', href: '/adapter/overview/', description: 'A Java library that connects your game server to L2NX.', svg: plug },
+    { title: 'Wiki', href: '/wiki/articles/ai-translation/', description: 'Your project wiki.', svg: wiki },
+    { title: 'l2nx.top', href: '/top/overview/', description: 'Server rating and voting: vote links, the vote.created webhook and the vote feed.', image: top },
+    { title: 'Integration API', href: '/api/overview/', description: 'HTTP API for your site and tools: hosts, API keys, scopes, errors and rate limits.', icon: 'seti:json' },
+  ]}
+/>
 
-<CardGrid>
-  <LinkCard
-    title="L2NX Core"
-    href="/core/overview/"
-    description="An open-source Lineage 2 server on L2J Mobius with L2NX built in: status, quick start and licensing."
-  />
-  <LinkCard
-    title="GS Adapter"
-    href="/adapter/overview/"
-    description="A Java library that connects your game server to L2NX: setup, configuration, modules and releases."
-  />
-  <LinkCard
-    title="l2nx.top"
-    href="/top/overview/"
-    description="Server rating and voting: vote links for your players, the vote.created webhook and the vote feed."
-  />
-  <LinkCard
-    title="Integration API"
-    href="/api/overview/"
-    description="HTTP API for your site and tools: hosts, API keys, scopes, errors and rate limits."
-  />
-</CardGrid>
+## Build on L2NX
+
+L2NX is a platform for Lineage 2 game server projects. Connect your game server, take votes on l2nx.top and integrate
+your site with the platform API.
+
+<LinkButton href="/adapter/overview/" icon="right-arrow">Connect a game server</LinkButton>
+<LinkButton href="/api/overview/" variant="minimal" icon="right-arrow">Integration API</LinkButton>
 
 ## Need access?
 
