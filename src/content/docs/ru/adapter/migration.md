@@ -39,8 +39,8 @@ description: Шаги обновления адаптера через breaking 
   вызовите `check` там, где старт вызывает `start`. Отказ — успешная проверка (`OK`, `allowed = false`). Пока вы не
   зарегистрировали обработчик, адаптер отвечает на команду как на неподдерживаемую. Код, который сам реализует
   `NxAppSessions`, добавляет `check`.
-- **Новые значения отказов.** `AlreadyActiveScope.IP` (ваш лимит по IP, считается по `initiator.ip` и недавнему IP
-  игрового клиента персонажа; отсутствующий IP ничего не ограничивает) и значения `AppSessionRefusalReason`
+- **Новые значения отказов.** `AlreadyActiveScope.IP` (ваш лимит по IP, считается по `initiator.ip`; отсутствующий IP
+  ничего не ограничивает) и значения `AppSessionRefusalReason`
   `NO_FISHING_SHOT`, `INVALID_FISHING_SHOT` и `FISHING_SHOT_GRADE_MISMATCH` для нового необязательного
   `StartOfflineFishingCommand.fishingShotItemId`. Отказ `DAILY_LIMIT` теперь может нести `retryAt` — момент сброса
   суточного лимита; если ваша сборка этот момент не знает, не передавайте его.

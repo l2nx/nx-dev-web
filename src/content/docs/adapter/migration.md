@@ -39,8 +39,8 @@ here are drop-in: bump the version and restart.
   call `check` where the start calls `start`. A refusal is a successful check (`OK`, `allowed = false`). Until you
   register a handler the adapter answers the command as unsupported. Code that implements `NxAppSessions` itself adds
   `check`.
-- **New refusal vocabulary.** `AlreadyActiveScope.IP` (your per-IP limit, counted under `initiator.ip` and the
-  character's recent game-client IP; an absent IP limits nothing), and the `AppSessionRefusalReason` values
+- **New refusal vocabulary.** `AlreadyActiveScope.IP` (your per-IP limit, counted under `initiator.ip`; an absent IP
+  limits nothing), and the `AppSessionRefusalReason` values
   `NO_FISHING_SHOT`, `INVALID_FISHING_SHOT` and `FISHING_SHOT_GRADE_MISMATCH` for the new optional
   `StartOfflineFishingCommand.fishingShotItemId`. A `DAILY_LIMIT` refusal may now carry `retryAt`, the moment your
   daily allowance resets; leave it out when your build does not know that moment.
