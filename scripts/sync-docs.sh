@@ -20,6 +20,7 @@ case "$section" in
   adapter) excludes=(changelog.mdx) ;;
   top) excludes=() ;;
   core) excludes=() ;;
+  wiki) excludes=() ;;
   *) die "unknown docs section: $section" ;;
 esac
 
