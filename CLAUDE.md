@@ -31,6 +31,10 @@ maintainers know where it lives.
 - Frontmatter values containing `: ` must be quoted, or YAML fails the build.
 - Biome does not see template usage in `.astro` files: unused-variable rules are off there (`biome.json` override).
 
+## Backlog
+
+Deferred work — GitHub issues of this repo, indexed in [`docs/TODO.md`](docs/TODO.md).
+
 ## Commands
 
 `pnpm dev` · `pnpm check` (local gate: biome, astro check, build + link validation) · `pnpm format`.
