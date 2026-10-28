@@ -21,6 +21,7 @@ case "$section" in
   top) excludes=() ;;
   core) excludes=() ;;
   wiki) excludes=() ;;
+  guide) excludes=() ;;
   *) die "unknown docs section: $section" ;;
 esac
 

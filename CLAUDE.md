@@ -16,8 +16,9 @@ maintainers know where it lives.
   adapter release). Never edit them by hand: the next release overwrites the file. A wrong spec is fixed in the
   service code.
 - **Bot-owned docs sections:** `src/content/docs/{,ru/}adapter/**` (except `changelog.mdx`, maintained here),
-  `src/content/docs/{,ru/}top/**`, `src/content/docs/{,ru/}core/**` and `src/content/docs/{,ru/}wiki/**` are mirrored from
-  the source repos' `docs/public/{en,ru}/` on their release (`core`, `wiki`: on a change of their pages on `main`) by `scripts/sync-docs.sh` (denylist grep and a portal build before the push). `.docs-sources/<section>` holds the sha of
+  `src/content/docs/{,ru/}top/**`, `src/content/docs/{,ru/}core/**`, `src/content/docs/{,ru/}wiki/**` and `src/content/docs/{,ru/}guide/**` are mirrored
+  from the source repos' `docs/public/{en,ru}/` on their release (`core`, `wiki`, `guide`: on a change of their pages on
+  the source trunk) by `scripts/sync-docs.sh` (denylist grep and a portal build before the push). `.docs-sources/<section>` holds the sha of
   the last synced source; a source that is its ancestor (rollback, old module tag) is skipped. Never edit these pages here: fix them in the source repo.
 - `astro.config.mjs` lists `openapi/*.json` itself: a new service appears under `/api/<service>/` without a config
   change. The OpenAPI plugin and its sidebar groups are registered only when at least one spec exists.
