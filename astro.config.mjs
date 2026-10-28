@@ -89,6 +89,11 @@ export default defineConfig({
       ],
       sidebar: [
         {
+          label: 'User guide',
+          translations: { ru: 'Руководство' },
+          items: ['guide/search'],
+        },
+        {
           label: 'L2NX Core',
           items: [
             'core/overview',
@@ -121,6 +126,7 @@ export default defineConfig({
         {
           label: 'Wiki',
           items: [
+            'wiki/search',
             {
               label: 'Articles',
               translations: { ru: 'Статьи' },
