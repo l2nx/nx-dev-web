@@ -103,6 +103,25 @@ email и IP запроса. Core проверяет его до вызова о�
 `AppRules`: `reviveEnabled()`, `reviveTownMode()` (`ReviveTownMode.NATIVE` или `SPOT_POOL`) и `reviveTownSpotPools()`;
 ключи `app.revive.*` см. в [конфигурации](/ru/adapter/configuration/#файл-настроек-приложения).
 
+## Чат с приложением
+
+Каналы, ключи метаданных и аудитории — enum, имена которых и есть строки на проводе: `ChatChannel` (канал, который
+есть в сборке, но не назван в enum, передаётся как `ChatChannel.unknownToken(rawType)`, `UNKNOWN_<int>`),
+`ChatMetadataKey` (ключ в map — `key()`) и `ChatAudience`. Отказ `SendChatMessageCommand` пишет имя
+`SendChatMessageRefusalReason` под ключом `SendChatMessageRefusal.REASON`.
+
+`AppRules.chatEnabled()` включает чат с приложением целиком: выключенным хост не публикует игровой чат и отклоняет
+любую `SendChatMessageCommand` от персонажа с `CHAT_DISABLED`; команда без `senderCharacterId` (объявление, строка от
+имени стаффа) уходит как раньше. `chatOnlineSendChannels()` и `chatOfflineSendChannels()` (множества `ChatChannel`,
+каждый с `sendableFromApp()`, в офлайн-списке ещё и с `sendableOffline()`) перечисляют, куда приложение может писать,
+пока персонаж в игре и вне её; хост выбирает список по состоянию персонажа в момент выполнения команды и отклоняет
+канал вне списка с `CHANNEL_DISABLED`. `SendChatMessageCommand.offlineDelivery = false` просит хост отклонить `WHISPER`
+адресату, который не в игре, с `TARGET_OFFLINE` вместо доставки только в приложение; `null` читается как `true`. На
+каждом `WHISPER` хост заполняет `SendChatMessageResult.targetInGame`: `true`, когда пакет ушёл в игровой клиент
+адресата, `false`, когда сообщение ушло только в приложение. Такой шёпот ещё и несёт
+`ChatMetadataKey.UNDELIVERED = "true"` в своём `ChatMessageEvent`. Ключи `app.chat.*` см. в
+[конфигурации](/ru/adapter/configuration/#файл-настроек-приложения).
+
 ## Конфигурация
 
 Своих ключей нет.

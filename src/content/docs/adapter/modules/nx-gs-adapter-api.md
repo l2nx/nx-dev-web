@@ -102,6 +102,25 @@ refusal whose reason is a `ReviveRefusalReason`. A retry with the same `idempote
 The settings come from `AppRules`: `reviveEnabled()`, `reviveTownMode()` (`ReviveTownMode.NATIVE` or `SPOT_POOL`) and
 `reviveTownSpotPools()`; see [configuration](/adapter/configuration/#app-settings-file) for the `app.revive.*` keys.
 
+## Chat with the app
+
+Channels, metadata keys and audiences are enums whose names are the wire strings: `ChatChannel` (a channel a build
+has but the enum does not name travels as `ChatChannel.unknownToken(rawType)`, `UNKNOWN_<int>`), `ChatMetadataKey`
+(the map key is `key()`) and `ChatAudience`. A refusal of `SendChatMessageCommand` writes a
+`SendChatMessageRefusalReason` name under `SendChatMessageRefusal.REASON`.
+
+`AppRules.chatEnabled()` switches the chat with the app as a whole: off, the host publishes no game chat and refuses
+every `SendChatMessageCommand` from a character with `CHAT_DISABLED`; a command without `senderCharacterId`
+(an announcement, a line under a staff name) still goes out. `chatOnlineSendChannels()` and
+`chatOfflineSendChannels()` (sets of `ChatChannel`, each `sendableFromApp()`, the offline one also
+`sendableOffline()`) list where the app may send while the character is in game and out of it; the host picks the
+list by the character's state when the command runs and refuses a channel outside it with `CHANNEL_DISABLED`.
+`SendChatMessageCommand.offlineDelivery = false` asks the host to refuse a `WHISPER` to an addressee out of game with
+`TARGET_OFFLINE` instead of delivering it to the app only; `null` reads as `true`. On every `WHISPER` the host sets
+`SendChatMessageResult.targetInGame`: `true` when the packet went to the addressee's game client, `false` when the
+message went to the app only. Such a whisper also carries `ChatMetadataKey.UNDELIVERED = "true"` in its
+`ChatMessageEvent`. See [configuration](/adapter/configuration/#app-settings-file) for the `app.chat.*` keys.
+
 ## Configuration
 
 No keys of its own.

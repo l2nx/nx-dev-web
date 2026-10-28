@@ -14,6 +14,50 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.123.0, nx-gs-adapter-core 0.52.0: chat vocabularies as enums, chat settings, whisper delivery
+
+**Breaking (source) for Java code; the wire strings do not change.** The chat constant classes become enums with the
+same names on the wire, and three constructors take a new parameter. Switch the host in the release that takes this
+api: no message changes shape, so a platform reading the old strings reads the new host as before. With the core
+update chat with the app is off by default: a host that publishes game chat and handles `SendChatMessageCommand` sets
+`app.chat.enabled=true` in its `l2nx-app.properties` to keep its current behaviour.
+
+Renamed types (no deprecated copy):
+
+| Before                                    | After                                                        | Notes                                                                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kafka.events.chat.WellKnownChatChannels` | `kafka.events.chat.model.ChatChannel`                        | same constant names; `ChatChannel.unknownToken(rawType)` builds `UNKNOWN_<int>`, `ChatChannel.fromToken` reads a token (`null` when unknown) |
+| `kafka.events.chat.ChatMetadataKeys`      | `kafka.events.chat.model.ChatMetadataKey`                    | the map key is `key()` (`source`, `shadowed`, `rawType`, `serverWide`, `undelivered`), not `name()`                                          |
+| `kafka.commands.chat.ChatAudiences`       | `kafka.commands.chat.model.ChatAudience`                     | same constant names                                                                                                                          |
+
+`ChatMessageEvent.channel`, `SendChatMessageCommand.channel` and `.audience` stay strings; their builders also take
+the enums. Code that put a constant string into `metadata` now writes `ChatMetadataKey.X.key()`.
+
+- **Refusal reasons.** New `SendChatMessageRefusalReason`, written under `SendChatMessageRefusal.REASON`
+  (`"reason"`): `CHAT_FORBIDDEN` (`FORBIDDEN`), `NOT_IN_CLAN`, `NOT_IN_ALLIANCE`, `NOT_IN_PARTY` (`INVALID_STATE`),
+  `TARGET_NOT_FOUND` (`NOT_FOUND`), `ITEM_NOT_OWNED` (`VALIDATION_FAILED`), and the new `CHAT_DISABLED`,
+  `CHANNEL_DISABLED`, `TARGET_OFFLINE` (`INVALID_STATE`). The strings are the ones hosts already send: replace your own
+  reason constants with the enum's `name()`.
+- **Chat settings.** New `AppRules` members `chatEnabled()`, `chatOnlineSendChannels()` and
+  `chatOfflineSendChannels()`, and the keys `app.chat.enabled` (default `false`), `app.chat.online-send-channels`
+  (default `CLAN,ALLIANCE,PARTY,WHISPER`) and `app.chat.offline-send-channels` (default `CLAN,ALLIANCE,WHISPER`), see
+  [configuration](/adapter/configuration/#app-settings-file). With chat off the host publishes no game chat and refuses
+  every send from a character with `CHAT_DISABLED`; a command without `senderCharacterId` (an announcement, a line
+  under a staff name) is not chat with the app and still goes out. A send to a channel outside the list for the
+  character's current state is refused with `CHANNEL_DISABLED`; the host picks the list by whether the character is in
+  game when the command runs.
+- `AppSettings` gains a `chat` field (`ChatSettings`), a new last-but-one constructor parameter: code that builds
+  `AppSettings` itself passes `null` or a `ChatSettings`.
+- `SendChatMessageCommand` gains `offlineDelivery` (`Boolean`), the **last** constructor parameter (after
+  `initiator`). `false`: a `WHISPER` to an addressee who is out of game is refused with `TARGET_OFFLINE` and nothing is
+  published; `null` (an older platform) reads as `true`.
+- `SendChatMessageResult` gains `targetInGame` (`Boolean`), the last constructor parameter. Set it on every `WHISPER`:
+  `true` when the packet went to the addressee's game client, `false` when the addressee was out of game and the
+  message went to the app only; leave it `null` on other channels. The platform reads delivery from it, not from
+  `recipients`.
+- New `ChatMetadataKey.UNDELIVERED`: the host sets it to `"true"` on the `ChatMessageEvent` of a whisper that reached
+  no game client of its addressee (an in-game whisper to `Name*`, or a send from the app to an addressee out of game).
+
 ## nx-gs-adapter-api 0.122.0: private buy store slots in the runtime sync
 
 **Breaking (source).** The canonical constructor of `CharacterRuntimeDto` takes a new last parameter,

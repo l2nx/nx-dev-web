@@ -14,6 +14,51 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.123.0, nx-gs-adapter-core 0.52.0: словари чата как enum, настройки чата, доставка шёпота
+
+**Ломает совместимость для Java-кода (на уровне исходников); строки на проводе не меняются.** Классы констант чата
+стали enum с теми же именами на проводе, и три конструктора получили новый параметр. Хост переключается в релизе,
+который берёт этот api: ни одно сообщение не меняет форму, поэтому платформа, читающая старые строки, читает новый хост
+как раньше. С обновлением core чат с приложением по умолчанию выключен: хост, который публикует игровой чат и
+обрабатывает `SendChatMessageCommand`, ставит `app.chat.enabled=true` в своём `l2nx-app.properties`, чтобы сохранить
+текущее поведение.
+
+Переименованные типы (без deprecated-копий):
+
+| Было                                      | Стало                                                     | Примечание                                                                                                                                       |
+| ----------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `kafka.events.chat.WellKnownChatChannels` | `kafka.events.chat.model.ChatChannel`                     | те же имена констант; `ChatChannel.unknownToken(rawType)` строит `UNKNOWN_<int>`, `ChatChannel.fromToken` читает токен (`null`, если неизвестен) |
+| `kafka.events.chat.ChatMetadataKeys`      | `kafka.events.chat.model.ChatMetadataKey`                 | ключ в map — `key()` (`source`, `shadowed`, `rawType`, `serverWide`, `undelivered`), не `name()`                                                 |
+| `kafka.commands.chat.ChatAudiences`       | `kafka.commands.chat.model.ChatAudience`                  | те же имена констант                                                                                                                             |
+
+`ChatMessageEvent.channel`, `SendChatMessageCommand.channel` и `.audience` остаются строками; их билдеры принимают и
+enum. Код, который клал строковую константу в `metadata`, теперь пишет `ChatMetadataKey.X.key()`.
+
+- **Причины отказа.** Новый `SendChatMessageRefusalReason`, пишется под ключом `SendChatMessageRefusal.REASON`
+  (`"reason"`): `CHAT_FORBIDDEN` (`FORBIDDEN`), `NOT_IN_CLAN`, `NOT_IN_ALLIANCE`, `NOT_IN_PARTY` (`INVALID_STATE`),
+  `TARGET_NOT_FOUND` (`NOT_FOUND`), `ITEM_NOT_OWNED` (`VALIDATION_FAILED`) и новые `CHAT_DISABLED`,
+  `CHANNEL_DISABLED`, `TARGET_OFFLINE` (`INVALID_STATE`). Строки те же, что хосты уже отправляют: замените свои
+  константы причин на `name()` этого enum.
+- **Настройки чата.** Новые члены `AppRules`: `chatEnabled()`, `chatOnlineSendChannels()` и
+  `chatOfflineSendChannels()`, и ключи `app.chat.enabled` (по умолчанию `false`), `app.chat.online-send-channels`
+  (по умолчанию `CLAN,ALLIANCE,PARTY,WHISPER`) и `app.chat.offline-send-channels` (по умолчанию
+  `CLAN,ALLIANCE,WHISPER`), см. [конфигурацию](/ru/adapter/configuration/#файл-настроек-приложения). С выключенным
+  чатом хост не публикует игровой чат и отклоняет любую отправку от персонажа с `CHAT_DISABLED`; команда без
+  `senderCharacterId` (объявление, строка от имени стаффа) — не чат с приложением и уходит как раньше. Отправка в канал
+  вне списка для текущего состояния персонажа отклоняется с `CHANNEL_DISABLED`; список хост выбирает по тому, в игре ли
+  персонаж в момент выполнения команды.
+- У `AppSettings` появилось поле `chat` (`ChatSettings`), новый предпоследний параметр конструктора: код, который сам
+  собирает `AppSettings`, передаёт `null` или `ChatSettings`.
+- У `SendChatMessageCommand` появилось поле `offlineDelivery` (`Boolean`), **последний** параметр конструктора (после
+  `initiator`). `false`: `WHISPER` адресату, который не в игре, отклоняется с `TARGET_OFFLINE`, ничего не публикуется;
+  `null` (более старая платформа) читается как `true`.
+- У `SendChatMessageResult` появилось поле `targetInGame` (`Boolean`), последний параметр конструктора. Заполняйте его
+  на каждом `WHISPER`: `true`, когда пакет ушёл в игровой клиент адресата, `false`, когда адресат не в игре и сообщение
+  ушло только в приложение; на других каналах оставляйте `null`. Платформа берёт доставку из него, а не из
+  `recipients`.
+- Новый `ChatMetadataKey.UNDELIVERED`: хост ставит `"true"` в `ChatMessageEvent` шёпота, который не дошёл ни до одного
+  игрового клиента адресата (шёпот из игры на `Name*` или отправка из приложения адресату, который не в игре).
+
 ## nx-gs-adapter-api 0.122.0: слоты частного магазина покупки в runtime-синхронизации
 
 **Ломает совместимость (на уровне исходников).** Канонический конструктор `CharacterRuntimeDto` получает новый
