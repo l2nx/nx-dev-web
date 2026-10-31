@@ -231,7 +231,7 @@ internals) and ArchUnit rules for the layout: the fixed package names, where com
 ports as interfaces only, no slice depending on the network layer. Rules the imported code still breaks are frozen:
 the build fails on any new violation, and the list of old ones only shrinks.
 
-Types that hold partition state are marked as single-writer (the open world and its regions are the first). Every public
+Types that hold partition state are marked as single-writer (so far the open world, its regions and the base creature class of the High Five chronicle). Every public
 method of such a type first checks that the caller is the owning thread, and the state uses primitive-keyed collections
 without locks. What the type hands out is a read-only snapshot, never its live collection. A static-analysis rule bans
 `synchronized` in these types, and an ArchUnit rule keeps their layout.
