@@ -43,8 +43,8 @@ Every stage ends with a server that builds and a client that logs in and plays.
 
 ## Layout
 
-The target layout; the repository has `libs/boot`, `libs/database`, `libs/gslink`, `libs/network`, `engine/core`,
-`protocols/login/c621`, `login/`, `chronicles/high-five/` and `tools/load/`.
+The target layout; the repository has `libs/boot`, `libs/database`, `libs/gslink`, `libs/logging`, `libs/network`, `engine/core`,
+`protocols/login/c621`, `protocols/game/p267`, `login/`, `chronicles/high-five/` and `tools/load/`.
 
 ```
 libs/          infrastructure with no Lineage 2 knowledge

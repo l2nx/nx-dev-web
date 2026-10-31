@@ -42,8 +42,8 @@ checks, graceful shutdown и образ Docker. Данные хранятся в
 
 ## Структура
 
-Целевая структура; в репозитории есть `libs/boot`, `libs/database`, `libs/gslink`, `libs/network`, `engine/core`,
-`protocols/login/c621`, `login/`, `chronicles/high-five/` и `tools/load/`.
+Целевая структура; в репозитории есть `libs/boot`, `libs/database`, `libs/gslink`, `libs/logging`, `libs/network`, `engine/core`,
+`protocols/login/c621`, `protocols/game/p267`, `login/`, `chronicles/high-five/` и `tools/load/`.
 
 ```
 libs/          инфраструктура без знаний о Lineage 2

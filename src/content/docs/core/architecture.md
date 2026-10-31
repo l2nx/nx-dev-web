@@ -201,7 +201,6 @@ root package is its API; the rest is internal unless marked as a named interface
   (root)       API: the facade, outbound ports, value types carried by commands and view events
   command/     commands and their handlers                       open to protocol adapters
   view/        view events and the read-only views mappers read   open to protocol adapters
-  event/       domain events for systems and scripts             open to other slices
   system/      systems                                           internal
   model/       components and internal state                     internal
   template/    static data: templates, loader, registry          internal
@@ -231,6 +230,11 @@ A test runs Spring Modulith's verification over the migrated slices (no cycles, 
 internals) and ArchUnit rules for the layout: the fixed package names, where commands, handlers and events may live (checked by their marker types),
 ports as interfaces only, no slice depending on the network layer. Rules the imported code still breaks are frozen:
 the build fails on any new violation, and the list of old ones only shrinks.
+
+Types that hold partition state are marked as single-writer (the open world and its regions are the first). Every public
+method of such a type first checks that the caller is the owning thread, and the state uses primitive-keyed collections
+without locks. What the type hands out is a read-only snapshot, never its live collection. A static-analysis rule bans
+`synchronized` in these types, and an ArchUnit rule keeps their layout.
 
 ## Migration path
 
