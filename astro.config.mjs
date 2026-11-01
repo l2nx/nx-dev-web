@@ -102,6 +102,12 @@ export default defineConfig({
             'core/operations',
             'core/architecture',
             'core/engine-research',
+            {
+              label: 'Features',
+              translations: { ru: 'Функции' },
+              collapsed: true,
+              items: [{ autogenerate: { directory: 'core/features' } }],
+            },
             'core/glossary',
             'core/licensing',
           ],
