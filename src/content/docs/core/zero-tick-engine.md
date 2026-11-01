@@ -147,12 +147,12 @@ In ECS and tick engines, doing work is the default. In Zero-Tick it is the excep
 
 ### Spaces
 
-![The open world as one partition, each instance and olympiad match as its own partition, and global services such as clans, mail, auction and castles as single writers exchanging messages with them](./zero-tick-spaces.svg)
+![The open world as one partition, each instance and olympiad match as its own partition, and global services such as clans, auction and castles as single writers exchanging messages with them](./zero-tick-spaces.svg)
 
 - **The open world is one partition.** It is not cut into regions: sieges load exactly the borders a split would
   create, and splitting a seamless world across writers is the approach that failed in practice.
 - **Each instance and each olympiad match is a partition of its own.** They are separate spaces in the game already.
-- **Global services** (clans, mail, auction, castles and the siege schedule) are single writers too, each with its own
+- **Global services** (clans, auction, castles and the siege schedule) are single writers too, each with its own
   inbox. Partitions send them commands and read their state from published snapshots.
 
 **Massive world battles don't slow down the Olympiad.** Every partition has its own loop thread, and there is

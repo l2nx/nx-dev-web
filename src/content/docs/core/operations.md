@@ -5,15 +5,16 @@ description: Configure, monitor, containerize and restart the nx-l2 login and ga
 
 Both servers run on Spring Boot. This page covers what an operator sets and watches. The login settings are
 `l2nx.login.*` keys of `application.yaml`, the network settings of both servers `l2nx.network.*`, the link between
-the servers `spring.grpc.*` and `l2nx.gslink.*`; the game settings stay in the `.ini` files of `config/`.
+the servers `spring.grpc.*` and `l2nx.gslink.*`, the postbox `l2nx.mail.*` ([mail](/core/features/mail/#settings)); the
+other game settings stay in the `.ini` files of `config/`.
 
 ## Configuration
 
-| Where                     | What                                                                                                                             |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `config/*.ini`            | game settings, client ports (game server only)                                                                                   |
-| `config/application.yaml` | database, management port and address, logging, `l2nx.login.*`, `l2nx.network.*`, the GS-link (`spring.grpc.*`, `l2nx.gslink.*`) |
-| environment variables     | override the Spring Boot keys of the file and of the built-in defaults                                                           |
+| Where                     | What                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config/*.ini`            | game settings, client ports (game server only)                                                                                                                |
+| `config/application.yaml` | database, management port and address, logging, `l2nx.login.*`, `l2nx.network.*`, the GS-link (`spring.grpc.*`, `l2nx.gslink.*`), the postbox (`l2nx.mail.*`) |
+| environment variables     | override the Spring Boot keys of the file and of the built-in defaults                                                                                        |
 
 `config/application.yaml` sits in the distribution (next to the `.ini` files of the game server); Spring Boot reads it without extra flags and
 it overrides the built-in defaults. Environment variables win over the file: `SPRING_DATASOURCE_URL`,
@@ -222,7 +223,7 @@ still gets its stack logged, but it never triggers the exit. The startup pass th
 
 ### Background tasks (game server)
 
-Work that never touches the world, such as reading the custom mail queue from the database or measuring CPU and
+Work that never touches the world, such as the mail expiry job or measuring CPU and
 memory load for the precautionary restart, runs off the world loop on Spring Boot's standard task scheduler and
 executor; its result goes back to the world loop. The standard `spring.task.*` keys tune them:
 
@@ -270,7 +271,8 @@ for the thread pools), tagged with `application`, plus `l2nx.network.*` (connect
 client's input queue after each packet it sends, one histogram across all clients for p99 and maximum) and, on the game server, the `l2nx.engine.*` loop metrics (pass time and phases, passes over
 budget, `l2nx.engine.pass.running` (seconds the running pass has taken so far, 0 between passes, so a blocked pass shows before it ends), inbox depth, timers, failures, calls from a thread that does not own the loop; `l2nx.engine.jdbc.on.loop`, the time
 loop threads spend in JDBC calls until database work moves off the loop, with a `WARN` naming the calling code once per site and minute) and `l2nx.legacy.packet` (run time per client
-packet).
+packet) and `l2nx.value.transaction` (run time of value transactions such as a mail send or receive, tagged `type` and
+`outcome`).
 
 ## Logs
 

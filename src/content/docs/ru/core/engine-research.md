@@ -293,7 +293,7 @@ saver раз за серверный тик ([Veloren docs](https://docs.veloren
 подтверждение только после коммита; работа McGill о персистентности MMO говорит то же: «critical events must be
 written synchronously» ([Kemme et al., NetGames 2008](https://cs.mcgill.ca/~kemme/papers/netgames08-persistence.html)).
 У предметов неизменяемая идентичность, которая никогда не переиспользуется. Каждая операция, которую можно повторить
-(получение почты, покупка), несёт operation id и применяется один раз. Append-only ledger движений ценностей позволяет
+(получение почты, покупка), несёт idempotency key и применяется один раз. Append-only ledger движений ценностей позволяет
 точечно убрать продублированное вместо отката мира. Обычное состояние вроде HP, позиции или опыта может идти через
 write-behind, где в пределах окна записывается только последнее значение по ключу
 ([Hazelcast MapStore](https://docs.hazelcast.com/hazelcast/5.5/mapstore/configuration-guide)); coalescing безопасен

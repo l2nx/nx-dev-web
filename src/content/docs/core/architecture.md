@@ -37,7 +37,7 @@ flowchart TB
   subgraph Loops[loop threads]
     W[open world partition]
     I[instance and olympiad partitions]
-    G[global services: clan, olympiad, siege, mail, auction]
+    G[global services: clan, olympiad, siege, auction]
   end
   W <-->|messages| G
   I <-->|messages| G
@@ -59,9 +59,10 @@ so no locking or hand-off protocol between partitions is needed beyond moving an
 - **Each instance and each olympiad match is a partition of its own.** These are separate spaces in the game
   already, so the seam costs nothing.
 - **Global services** own state that spans partitions: clans and alliances, parties spread over several partitions,
-  olympiad registration, castle ownership and siege schedule, mail, auction, world events. Each is a single writer
+  olympiad registration, castle ownership and siege schedule, auction, world events. Each is a single writer
   with its own inbox. Partitions send commands ("player joins clan") and receive results; they read shared state such
-  as clan names and castle owners from immutable snapshots the service publishes.
+  as clan names and castle owners from immutable snapshots the service publishes. Mail is not one: its letters live
+  only in the database, and the row of a letter orders concurrent changes to it ([Mail](/core/features/mail/)).
 - **All partitions run in one process** on a pool of loop threads. A partition is executed by one thread at a time,
   and there is no global barrier, so a heavy partition does not delay the others.
 
@@ -168,8 +169,8 @@ feeds the replication phase directly.
   crash" is structurally impossible: there is a single save point.
 - **Balance plus ledger.** Currency and stackable items keep a balance that cannot go negative, and every movement also
   writes an append-only ledger row in the same transaction. The ledger serves audit and lets a duplication be removed
-  precisely instead of rolling the world back. Every operation carries an id, so a repeated request is not executed
-  twice.
+  precisely instead of rolling the world back. Every value transaction carries an idempotency key, so a repeated
+  request is not executed twice. The first module built on them is [mail](/core/features/mail/).
 - **Everything else is written behind.** Position, experience, effects, skills and quest progress are tracked as dirty
   and written in batches about every 30 seconds. A crash loses at most that much progress, never values. Logout and
   shutdown save synchronously.
@@ -247,7 +248,7 @@ Scripts keep calling facades at every step.
 | 0   | Bot load harness: headless clients with login, movement, PvE, PvP and siege scenarios               |
 | 1   | Metrics: a baseline of the current execution first, then pass time per partition and phase          |
 | 2   | Identity: UUIDv7 keys in the PostgreSQL schema, wire-handle allocator, with the PostgreSQL move     |
-| 3   | Value transactions, ledger, operation ids, outbox                                                   |
+| 3   | Value transactions, ledger, idempotency keys, outbox                                                |
 | 4   | Database access off game threads, write-behind                                                      |
 | 5   | Clock and random generator as inputs; monotonic game time                                           |
 | 6   | The open world as a single writer: it drains the session queues, every world task goes to its inbox |

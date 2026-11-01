@@ -288,7 +288,7 @@ The remedies follow from the incidents. A transfer of value is **one database tr
 confirmed to the player only after it commits; McGill's work on MMO persistence likewise says "critical events must
 be written synchronously" ([Kemme et al., NetGames 2008](https://cs.mcgill.ca/~kemme/papers/netgames08-persistence.html)).
 Items keep an immutable identity that is never reused. Every operation that can be retried (a mail claim, a purchase)
-carries an operation id so it applies once. An append-only ledger of value movements makes it possible to remove
+carries an idempotency key so it applies once. An append-only ledger of value movements makes it possible to remove
 duplicated goods precisely instead of rolling the world back. Ordinary state such as HP, position or experience can
 go through write-behind, where only the latest value per key within a window is written
 ([Hazelcast MapStore](https://docs.hazelcast.com/hazelcast/5.5/mapstore/configuration-guide)); coalescing is safe
