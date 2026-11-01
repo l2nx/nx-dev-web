@@ -96,16 +96,16 @@ chronicle SPI has two sides:
   writes a chronicle table.
 
 ```mermaid
-flowchart LR
-  C[client] --> A[protocol adapter<br/>of the chronicle]
-  A -->|commands| H[mail handlers<br/>world loop]
-  H -->|reserve, apply| W[chronicle SPI<br/>live objects]
-  H -->|submit| T[value transaction runner]
-  T -->|one PostgreSQL transaction| D[(mails, snapshots,<br/>items, ledger)]
-  T -->|SQL over chronicle tables| S[chronicle SPI<br/>item store]
-  T -->|outcome| H
+flowchart TB
+  C[client] -->|packets| A[protocol adapter]
+  A -->|commands| H[mail handlers, world loop]
   H -->|view events| A
-  E[expiry job<br/>background] --> T
+  H -->|reserve, apply| W[chronicle SPI: live objects]
+  E[expiry job] --> T
+  H -->|submit| T[value transaction runner]
+  T -->|outcome| H
+  T --> D[(PostgreSQL: mails, snapshots, items, ledger)]
+  T --> S[chronicle SPI: item store]
 ```
 
 The database is the source of truth; no letter is cached. Lists and open letters are read-only queries off the world
@@ -132,7 +132,7 @@ sequenceDiagram
   L->>D: read letter and snapshot (off the loop)
   L->>L: validate, reserve, pending marks
   L->>R: submit(idempotency key)
-  R->>D: claim key; UPDATE ... WHERE ATTACHED;<br/>move items; pay COD; ledger; COMMIT
+  R->>D: claim key, conditional UPDATE, move items, pay COD, ledger, COMMIT
   R-->>L: Committed
   L->>L: apply to memory, clear marks
   L-->>P: items, system messages

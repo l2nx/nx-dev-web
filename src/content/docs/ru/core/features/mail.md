@@ -96,16 +96,16 @@ Interlude. Факты по клеткам — в [подробном сравн�
   никогда не пишет в таблицы хроники.
 
 ```mermaid
-flowchart LR
-  C[клиент] --> A[адаптер протокола<br/>хроники]
-  A -->|команды| H[обработчики почты<br/>world loop]
-  H -->|резерв, применение| W[SPI хроники<br/>живые объекты]
-  H -->|submit| T[runner value transactions]
-  T -->|одна транзакция PostgreSQL| D[(письма, snapshots,<br/>предметы, ledger)]
-  T -->|SQL над таблицами хроники| S[SPI хроники<br/>item store]
-  T -->|outcome| H
+flowchart TB
+  C[клиент] -->|пакеты| A[адаптер протокола]
+  A -->|команды| H[обработчики почты, world loop]
   H -->|view events| A
-  E[задача истечения<br/>в фоне] --> T
+  H -->|резерв, применение| W[SPI хроники: живые объекты]
+  E[задача истечения] --> T
+  H -->|submit| T[runner value transactions]
+  T -->|outcome| H
+  T --> D[(PostgreSQL: письма, snapshots, предметы, ledger)]
+  T --> S[SPI хроники: item store]
 ```
 
 Источник истины — база данных; письма не кэшируются. Списки и открытые письма — read-only запросы вне world loop.
@@ -132,7 +132,7 @@ sequenceDiagram
   L->>D: чтение письма и snapshot (вне цикла)
   L->>L: проверка, резерв, pending marks
   L->>R: submit(idempotency key)
-  R->>D: claim ключа; UPDATE ... WHERE ATTACHED;<br/>перенос предметов; COD; ledger; COMMIT
+  R->>D: claim ключа, условный UPDATE, перенос предметов, COD, ledger, COMMIT
   R-->>L: Committed
   L->>L: применение к памяти, снятие меток
   L-->>P: предметы, системные сообщения
