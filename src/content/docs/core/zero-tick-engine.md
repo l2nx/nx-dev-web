@@ -20,14 +20,17 @@ Timers, buffs and cooldowns cost several times less than in classic builds.
 
 ### No dupes
 
-An item can't end up in two places: inventory changes happen one at a time, on the space's own thread.
+An item can't end up in two places: inventory changes happen one at a time, on the space's own thread. And the
+server checks it: every type that holds world state refuses a call from any other thread, so a stray thread fails
+loudly instead of quietly duplicating an item.
 
 ![Selling an item to an NPC and trading it away at the same moment: in a classic build one missed lock lets both go through and dupes the item, on the Zero-Tick partition thread the sale runs first and the trade finds no item](./zero-tick-dupe.svg)
 
 ### No races
 
 A hit and a Sleep that land at the same moment always resolve the same way, in arrival order. An attack wakes a
-sleeping target, so the order decides the fight.
+sleeping target, so the order decides the fight. There are no locks left to forget: the world entities shed 119
+`synchronized` blocks, 155 concurrent collections and 43 atomics for one owner thread and a check.
 
 ![A mage's Sleep and a warrior's hit on one monster: in a classic build two threads leave the result to chance, on the Zero-Tick partition thread they run in arrival order and the result is the same every time](./zero-tick-race.svg)
 
@@ -55,6 +58,7 @@ A pass is deterministic: time and randomness come only from the pass, and the se
 | Wakes only on events, no polling     |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 | No locks on game state, one writer   |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✓       |
 | Dupe-proof by design                 |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      —       |
+| Thread ownership checked at runtime  |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✓       |
 | Deterministic passes (seeded RNG)    |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 | Built-in Prometheus metrics          |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
 | Pass budget with per-phase breakdown |     ✓     |     ✗      |  ✗   |     ✗      |        ✗        |      ✗       |
@@ -191,6 +195,45 @@ randomized differential test now runs the queue against a reference model on eve
 - **A failing item costs only itself.** The item is taken off the queue and then run; a handler that throws
   is reported and the rest of the pass goes on.
 
+### Single writer
+
+Every type that holds world state belongs to one thread: the loop thread of its partition. Such a type is marked
+`@SingleWriter`, and each of its public methods starts with an ownership check: a call from any other thread throws,
+counts a meter and logs the call site once a minute. Build rules keep it that way: ArchUnit requires the check first
+in every public method of a marked type and forbids concurrent collections, locks, atomics, `volatile` and public
+mutable fields there; PMD forbids `synchronized`.
+
+- **What is covered.** The open world and its regions, every world object and creature down to monsters, pets,
+  doors and service NPCs, effects and reuse, items and their containers, the player with its holders, stats and
+  variables, parties, command channels and party matching, clans, zones, spawns, instances, residences and their
+  functions, clan hall and item auctions: 252 types. Static data (templates, zone geometry) is built once and only
+  read, and plain locations are value types handed out as copies.
+- **What it removed.** In those classes: 119 `synchronized` methods and blocks, 155 concurrent collections, 43
+  atomics, 28 `volatile` fields and 6 explicit locks, down to none. Their place is taken by plain fastutil and JDK
+  collections with a fixed iteration order, so the same inputs pick the same targets, owners and drops.
+- **Iteration.** A type hands out read-only snapshots, never its live collection. A walk that calls out (packets,
+  AI, effects, a caller's callback) runs over a copy taken into reusable per-depth scratch buffers, so it allocates
+  nothing in a steady state; hot callers get lookups and counts instead of copies.
+- **What it found.** Moving each class onto one thread meant reading every path that touched it. The migration fixed,
+  among others: any player could edit or dismiss any party room; a command channel stayed led by a party leader who
+  had left; a passive skill replaced by a new level kept its old tick tasks; a buff-slot effect grew the buff limit
+  on every use; clan hall, castle and fort functions kept charging fees after removal; zone settings were never
+  restored on reload; the clan war list packet could announce more records than it sent.
+
+| Path (JMH, ns per operation)                 | Before | Single writer |
+| -------------------------------------------- | -----: | ------------: |
+| Stat calculation of a creature               |     19 |            15 |
+| Item lookup by object id in a container      |    224 |           2.8 |
+| Zone revalidation on a move (enter and leave) |    274 |           131 |
+| Walk over 100 clan members                   |    315 |           258 |
+| Online count of a 100-member clan            |    317 |           190 |
+| Region switch, 500 objects per region        | 23 000 |        54 000 |
+
+Medians of three interleaved JMH rounds against the build before each step, on an AMD Ryzen 5 5600X with JDK 25
+on Windows 11. Most paths got faster because a plain collection is cheaper than a concurrent one. The check itself
+costs about a nanosecond per call; where a path makes thousands of checks and does little else, as in the region
+switch, it shows ([#146](https://github.com/l2nx/nx-l2/issues/146)).
+
 ### Benchmarks
 
 Measured on an AMD Ryzen 5 5600X, JDK 25, Linux in Docker on WSL2, which is a virtual machine; absolute numbers on
@@ -288,6 +331,13 @@ replays a session.
   The signal is the per-phase pass time and the over-budget counter (`pass-budget`); the acceptance test is bot sieges
   on the full stack. There are no real siege numbers yet: the world is still migrating.
 
+- **The ownership check costs about a nanosecond per call.** Most hot paths came out faster anyway, but a path that
+  makes thousands of checks and little else pays for them: a region switch over 500 objects per region runs about
+  twice as long, 23 µs to 54 µs ([#146](https://github.com/l2nx/nx-l2/issues/146), under the performance epic
+  [#151](https://github.com/l2nx/nx-l2/issues/151)).
+- **Every world entity is a single writer; the global services are not yet.** Managers, data tables and task
+  managers outside the entity model still keep concurrent collections of their own and are the next step
+  ([#161](https://github.com/l2nx/nx-l2/issues/161)).
 - **Open work:**
   - input ordered against due timers by arrival time ([#45](https://github.com/l2nx/nx-l2/issues/45));
   - replay recording in production ([#44](https://github.com/l2nx/nx-l2/issues/44)).
