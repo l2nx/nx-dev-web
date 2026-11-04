@@ -240,7 +240,7 @@ inbox, следующего дедлайна таймера, следующег�
 Типы, которые держат состояние партиции, помечены как single-writer (открытый мир, его регионы и, в хронике High Five, базовый класс world object, база event listener, общая для templates, зон, residences, олимпиады и глобальных контейнеров событий, класс creature с его классами NPC, attackable, playable и summon, vehicles, towers и классы под ними: монстры, pets, servitors, guards, двери и сервисные NPC, а также effect list creature с его записями: применённые effects, reuse skills и предметов, invulnerability к skill, а также items и контейнеры items: inventory, pet inventory, warehouses, freight и refund, с drop protection item, а также игрок с его world entry, per-player holders, иерархии stat и status creatures и семейство variables, party и command channel со списками поиска группы, клан с его участниками и привилегиями рангов, и остальные сущности мира: зоны, спауны, holders aggro и миньонов у NPC, инстансы, резиденции и их функции, аукционы clan hall и предметов, cursed weapons и атрибуты предметов). Каждый
 публичный метод такого типа сначала проверяет, что вызывает владеющий поток, а состояние хранится в обычных коллекциях или
 коллекциях с primitive-ключами, без локов и concurrent-коллекций. Event listeners вызываются в порядке priority, затем в порядке регистрации. Наружу тип отдаёт read-only snapshot, а не свою живую коллекцию. Правило статического
-анализа запрещает `synchronized` в этих типах, а правило ArchUnit проверяет их раскладку.
+анализа запрещает `synchronized` в этих типах, в движке и в скриптах; подкласс помеченного типа тоже обязан быть помечен, а правило ArchUnit проверяет их раскладку.
 
 ## Путь миграции
 

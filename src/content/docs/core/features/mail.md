@@ -117,8 +117,8 @@ would add only a cache to keep consistent with offline writes.
 Each move (send, receive, return, cancel, expiry, character deletion) is one PostgreSQL transaction that updates the
 letter, the items and the adena and appends one value-ledger row per movement.
 
-1. The handler validates on the world loop and sets **pending marks** on the reserved items and adena; container
-   mutations reject marked items on every path, scripts included.
+1. The handler validates on the world loop and sets **pending marks** on the reserved items and adena; a marked
+   item does not exist for gameplay: container lookups, counts and mutations skip it, scripts included.
 2. The runner executes the transaction on the persistence executor.
 3. The outcome returns to the loop, which applies the commit to memory and clears the marks.
 
@@ -239,7 +239,7 @@ movement with its transaction: holder (inventory, warehouse or mail), item, temp
 | `fee.base`                    | `100`   | adena per letter                                                        |
 | `fee.per-attachment`          | `1000`  | adena per attachment                                                    |
 | `max-attachments`             | `8`     | attachments per letter, 1–8 (the client shows 8 slots)                  |
-| `mailbox-limit`               | `240`   | visible letters per box                                                 |
+| `mailbox-limit`               | `240`   | visible letters per box; at most 630 for the High Five client           |
 | `expiry`                      | `360h`  | letter lifetime                                                         |
 | `cod-expiry`                  | `12h`   | lifetime of a letter with cash on delivery                              |
 | `send-interval`               | `10s`   | minimum interval between sends of a character; `0s` disables it         |
@@ -256,8 +256,8 @@ The send interval is a per-character Bucket4j bucket.
   takes nothing from the world's id allocator.
 - **Flags:** `WithItem` only while `ATTACHED`, `Trade` only while COD is unpaid, `ReturnAble` only for an unsettled,
   non-returned `PLAYER` letter.
-- **Subjects** are truncated to 96 characters in the lists so a full box of 240 fits one frame (65535 bytes); the
-  opened letter carries the full subject.
+- **Subjects** in the lists are shortened to what one frame (65535 bytes) leaves, shared evenly: 100 characters in a
+  full box of 240, whole subjects in a short list; the opened letter carries the full subject.
 
 ## Detailed comparison
 
@@ -278,7 +278,7 @@ actions idempotent.
 - **Receive stays visible on a settled letter.** Protocol 267 has no "already received" flag; the client shows Receive
   (Cancel in the sent copy) whenever items are listed, and the server answers 3382 / 3030. A client patch hiding both
   buttons is deferred.
-- **Subjects are truncated to 96 characters in the lists** (frame size limit); the opened letter is complete.
+- **Subjects are shortened in long lists** (frame size limit); the opened letter is complete.
 - **Platform events come with the adapter:** each committed mail transaction will publish an event with the moved
   snapshots through a transactional outbox, which arrives with the L2NX platform adapter
   ([#13](https://github.com/l2nx/nx-l2/issues/13)).

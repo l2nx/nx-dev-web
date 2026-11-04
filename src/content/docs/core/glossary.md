@@ -83,7 +83,7 @@ timers) are concepts as well.
 | Game term               | Name used by players in English     |
 | Collisions              | Other meanings or conflicting names |
 
-The glossary has 292 terms in 10 areas; the collisions of widely reused words are collected at the end.
+The glossary has 293 terms in 10 areas; the collisions of widely reused words are collected at the end.
 
 ## 1. World objects and hierarchy
 

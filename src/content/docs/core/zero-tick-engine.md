@@ -128,7 +128,7 @@ components a system needs.
 | When work runs        | fixed-rate tasks and ticks                       | every frame                                                          | on input, a due deadline or a due periodic system                                               |
 | Work per wake-up      | all due tasks, even empty ones                   | all entities with the component, O(entities) per tick                | only what is affected, O(events)                                                                |
 | Threading             | shared pool plus `synchronized`: races and dupes | the scheduler runs systems in parallel by component access, no locks | one writer thread per partition, partitions in parallel                                         |
-| Order and determinism | up to the OS scheduler                           | deterministic with a fixed step                                      | one "now" per pass, `(deadline, sequence)` order                                               |
+| Order and determinism | up to the OS scheduler                           | deterministic with a fixed step                                      | one "now" per pass, `(deadline, sequence)` order                                                |
 | Strong side           | simple and familiar                              | dense work every frame, cache-friendly iteration                     | sparse work: most objects idle, rare precise events such as buffs, cooldowns, respawns and hits |
 | Weak side             | races, idle tasks, no visibility                 | empty ticks, latency up to one step, every script rewritten          | dense per-frame work has to go to periodic systems                                              |
 
@@ -201,7 +201,9 @@ Every type that holds world state belongs to one thread: the loop thread of its 
 `@SingleWriter`, and each of its public methods starts with an ownership check: a call from any other thread throws,
 counts a meter and logs the call site once a minute. Build rules keep it that way: ArchUnit requires the check first
 in every public method of a marked type and forbids concurrent collections, locks, atomics, `volatile` and public
-mutable fields there; PMD forbids `synchronized`.
+mutable fields there; PMD forbids `synchronized`, in the engine and in the scripts. A subclass of a marked type (a
+script extending a monster) carries the mark too, and a test pins the short list of exceptions (static data such as
+templates), which only shrinks.
 
 - **What is covered.** The open world and its regions, every world object and creature down to monsters, pets,
   doors and service NPCs, effects and reuse, items and their containers, the player with its holders, stats and
@@ -220,18 +222,18 @@ mutable fields there; PMD forbids `synchronized`.
   on every use; clan hall, castle and fort functions kept charging fees after removal; zone settings were never
   restored on reload; the clan war list packet could announce more records than it sent.
 
-| Path (JMH, ns per operation)                 | Before | Single writer |
-| -------------------------------------------- | -----: | ------------: |
-| Stat calculation of a creature               |     19 |            15 |
-| Item lookup by object id in a container      |    224 |           2.8 |
-| Zone revalidation on a move (enter and leave) |    274 |           131 |
-| Walk over 100 clan members                   |    315 |           258 |
-| Online count of a 100-member clan            |    317 |           190 |
-| Region switch, 500 objects per region        | 23 000 |        54 000 |
+| Path (JMH, ns per operation)                  | Before | Single writer |
+| --------------------------------------------- | -----: | ------------: |
+| Stat calculation of a creature                |     19 |            15 |
+| Item lookup by object id in a container       |    224 |           2.8 |
+| Zone revalidation on a move (enter and leave) |    340 |           186 |
+| Walk over 100 clan members                    |    315 |           258 |
+| Online count of a 100-member clan             |    317 |           190 |
+| Region switch, 500 objects per region         | 23 000 |        54 000 |
 
 Medians of three interleaved JMH rounds against the build before each step, on an AMD Ryzen 5 5600X with JDK 25
 on Windows 11. Most paths got faster because a plain collection is cheaper than a concurrent one. The check itself
-costs about a nanosecond per call; where a path makes thousands of checks and does little else, as in the region
+costs 1 to 5 ns per call: about 1 ns alone, about 5 ns inside the region switch; where a path makes thousands of checks and does little else, as in the region
 switch, it shows ([#146](https://github.com/l2nx/nx-l2/issues/146)).
 
 ### Benchmarks
@@ -331,7 +333,7 @@ replays a session.
   The signal is the per-phase pass time and the over-budget counter (`pass-budget`); the acceptance test is bot sieges
   on the full stack. There are no real siege numbers yet: the world is still migrating.
 
-- **The ownership check costs about a nanosecond per call.** Most hot paths came out faster anyway, but a path that
+- **The ownership check costs 1 to 5 ns per call.** Most hot paths came out faster anyway, but a path that
   makes thousands of checks and little else pays for them: a region switch over 500 objects per region runs about
   twice as long, 23 µs to 54 µs ([#146](https://github.com/l2nx/nx-l2/issues/146), under the performance epic
   [#151](https://github.com/l2nx/nx-l2/issues/151)).
