@@ -15,7 +15,7 @@ app.l2nx:nx-gs-db-migrations
 ```
 
 Java 8. Тег релиза `db-migrations/vX.Y.Z`. Версии — на
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-db-migrations).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-db-migrations/).
 
 ## Когда нужен хосту
 

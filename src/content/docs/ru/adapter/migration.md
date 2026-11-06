@@ -14,6 +14,46 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.124.0, nx-gs-adapter-core 0.53.0, nx-gs-runtime-sync-core 0.6.0, nx-gs-db-migrations 0.6.0: результаты сессий, снимки предметов, старт runtime-синхронизации
+
+**Ломающее изменение.** Берите все четыре модуля вместе. Хост
+переходит на него в том релизе, который его берёт.
+
+**Вызовите `NxAdapter.runtimeSync().hostStarted()`, иначе runtime-синхронизация ничего не отправит.** Вызов один, сразу
+после публикации `ServerStartedEvent`, ушло событие или ждёт привязки канала событий. Таймера и запасного пути нет:
+хост, который не вызвал метод, тиков не получит. `NxAppSessions.hostReady()` вызывается раньше него.
+
+- `CharacterPresenceEvent.charId` теперь `characterId`, и в билдере, и на проводе.
+- Все `charId` и `*CharId` в api теперь `characterId` и `*CharacterId` (`buyerCharId` стал `buyerCharacterId`,
+  `targetCharId` стал `targetCharacterId`): команды, результаты, события и `RatingDbDto`. Меняются и билдер, и провод.
+- `charName` и `targetCharName` теперь `characterName` и `targetCharacterName`, в `ChatMessageEvent` и
+  `TelegramCharacterLinkCommand`. Меняются и билдер, и провод.
+- `TransferCharToAccountCommand` теперь `TransferCharacterToAccountCommand`, `TelegramCharLinkCommand` теперь
+  `TelegramCharacterLinkCommand`, вместе с классами `*Result`. Команды маршрутизируются по простому имени класса, поэтому
+  меняется и `Nx-Message-Type`: зарегистрируйте обработчик на новый класс, отправитель старого имени получит
+  `UNSUPPORTED_COMMAND`.
+- `CharacterPresenceEvent` принимает `result` (`SessionResult`), только при `online = false`. Клиентская сессия задаёт его
+  через билдер, app-сессия получает от движка. `activity` при `source = CLIENT` разрешён только как
+  `OFFLINE_PRIVATE_STORE`, сессия нативного офлайн-магазина.
+- `OfflineSessionHost.takeSessionResult(session)` — новый `default`-метод, отвечающий `null`. Переопределите его, чтобы
+  передавать результаты. Движок вызывает его один раз после каждого `removeFromWorld`, включая откат старта и персонажа,
+  которого не удалось разместить, так что recorder, хранимый по id сессии, можно отпустить здесь, кроме случая, когда конец гонится со штатной остановкой, уже сохранившей блок: такой конец вызов пропускает. Вызов идёт и при
+  штатной остановке для каждой оставшейся открытой сессии.
+- `OfflineSession.getCarriedResult()` содержит текущий блок после штатной остановки, в тех представлениях, что
+  `placeInWorld` и `startAction` получают при восстановлении. Заполните им recorder. Пустой блок значит, что записывать
+  было нечего; `null` — что блок потерян, и завершение придёт с `partial`.
+- Результат больше `SessionResult.MAX_JSON_BYTES` отбрасывается, завершение уходит без него: до этого предела сворачивайте
+  `uniques` в `items`.
+- Новые значения: `LogoutReason.SOLD_OUT` и `APP_OVERWEIGHT` (второе принимает `onActionEnded`), отказы
+  `NO_FISHING_EXPERTISE`, `BAIT_LEVEL_MISMATCH`, `INVENTORY_FULL`, `OVERWEIGHT`. `INVENTORY_FULL` и `OVERWEIGHT` несут свои
+  числа в `CommandProblem.extensions` и в `AppSessionCheckResult`, где они задаются через билдер. `APP_INVENTORY_FULL`
+  больше не покрывает вес.
+- Формы предметов несут `ItemSnapshot` в `item` вместо отдельных полей, команды предметов используют `characterId`.
+  Проверка покупки сравнивает `BuyLine.attributesForMatch()`: пустая карта считается `null`.
+- В `ConnectContext` появился `runtimeSync()`: собирайте его билдером.
+- Новый ключ `app.shutdown.result-millis-per-session` в `l2nx-app.properties` и миграция, добавляющая столбец в таблицу
+  сессий адаптера; применяется при старте.
+
 ## nx-gs-adapter-api 0.123.0, nx-gs-adapter-core 0.52.0: словари чата как enum, настройки чата, доставка шёпота
 
 **Ломает совместимость для Java-кода (на уровне исходников); строки на проводе не меняются.** Классы констант чата

@@ -15,7 +15,7 @@ app.l2nx:nx-gs-adapter-api
 ```
 
 Java 8. Тег релиза `api/vX.Y.Z`. Версии — на
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-adapter-api).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-adapter-api/).
 
 ## Когда нужен хосту
 
@@ -81,6 +81,12 @@ stone с группами, которые он принимает, и вероя
 `findOpen` (в памяти) перечисляет все открытые сессии типа, включая ждущие восстановления: хост вызывает его прямо
 перед `hostReady()`, чтобы зарезервировать их лимиты и споты. Каждая `OfflineSession` несёт `returnThresholdMs`, с
 которым начата. Типы сессий лежат в `app.l2nx.gs.adapter.api.spi.model.session`.
+
+`OfflineSessionHost.takeSessionResult` отдаёт движку то, что изменила сессия, для события её завершения. Вызывается
+один раз после каждого `removeFromWorld` и при штатной остановке для оставшейся открытой сессии; по умолчанию отвечает
+`null`. Восстановление возвращает сохранённый блок как `OfflineSession.getCarriedResult()`. `NxRuntimeSync`
+(`ConnectContext.runtimeSync()`, `NxAdapter.runtimeSync()`) — шлюз старта runtime-синхронизации: хост вызывает
+`hostStarted()`, когда его старт опубликован.
 
 `NxAppSessions.check(characterId, spotPool, spotId)` — режим проверки старта: он выполняет собственные проверки
 старта адаптера (одна открытая сессия на персонажа, свободный спот) и отвечает `AppSessionCheckOutcome` (`ALLOWED`,

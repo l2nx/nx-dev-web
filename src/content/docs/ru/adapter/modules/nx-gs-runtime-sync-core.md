@@ -16,7 +16,7 @@ app.l2nx:nx-gs-runtime-sync-core
 ```
 
 Java 8. Тег релиза `runtime-sync/vX.Y.Z`. Версии — на
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-runtime-sync-core).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-runtime-sync-core/).
 
 ## Когда нужен хосту
 
@@ -27,6 +27,10 @@ Java 8. Тег релиза `runtime-sync/vX.Y.Z`. Версии — на
 
 Один `RuntimeStateProvider`, который возвращает текущие строки каждой runtime-сущности из памяти. К базе модуль не
 обращается.
+
+Хост также объявляет свой старт: один вызов `NxAdapter.runtimeSync().hostStarted()` сразу после публикации
+`ServerStartedEvent`. Тики начинаются, только когда модуль запущен и этот вызов сделан, поэтому хост, который его не
+делает, не отправляет runtime-данных. До вызова модуль остаётся `ACTIVE` без статистики сущностей.
 
 ## Конфигурация
 

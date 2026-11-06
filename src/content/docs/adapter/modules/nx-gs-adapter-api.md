@@ -15,7 +15,7 @@ app.l2nx:nx-gs-adapter-api
 ```
 
 Java 8. Release tag `api/vX.Y.Z`. Versions on
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-adapter-api).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-adapter-api/).
 
 ## When the host needs it
 
@@ -80,6 +80,11 @@ only. A failed database read completes its future exceptionally; the host refuse
 unavailable. `findOpen` (in memory) lists every open session of a type, those awaiting the restore included: the host
 calls it right before `hostReady()` to reserve their limits and spots. Every `OfflineSession` carries the
 `returnThresholdMs` it started with. The session types live in `app.l2nx.gs.adapter.api.spi.model.session`.
+
+`OfflineSessionHost.takeSessionResult` gives the engine what a session changed, for its end event. It runs once after
+every `removeFromWorld` and at a graceful stop for a session left open; the default answers `null`. A restore hands
+the stored block back as `OfflineSession.getCarriedResult()`. `NxRuntimeSync` (`ConnectContext.runtimeSync()`,
+`NxAdapter.runtimeSync()`) is the runtime sync start gate: the host calls `hostStarted()` once its start is published.
 
 `NxAppSessions.check(characterId, spotPool, spotId)` is the check mode of a start: it runs the adapter's own start
 checks (one open session per character, a free spot) and answers an `AppSessionCheckOutcome` (`ALLOWED`,

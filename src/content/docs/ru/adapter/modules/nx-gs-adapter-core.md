@@ -15,7 +15,7 @@ app.l2nx:nx-gs-adapter-core
 ```
 
 Java 8. Тег релиза `core/vX.Y.Z`. Версии — на
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-adapter-core).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-adapter-core/).
 
 ## Когда нужен хосту
 
@@ -52,6 +52,7 @@ Java 8. Тег релиза `core/vX.Y.Z`. Версии — на
 | `hostExecutor(executor)`  | Executor, который выполняет работу на игровой стороне для обработчиков команд. Задайте до `start()`.        |
 | `appRules()`              | Актуальные настройки приложения как `NxAppRules`. Первый вызов загружает файл; доступен до `start()`.       |
 | `migrateSchema()`         | Мигрирует таблицы `l2nx_*` заранее — для хоста, который читает их до `start()`. Выполняется один раз.       |
+| `runtimeSync()`           | Шлюз старта runtime-синхронизации. Хост вызывает на нём `hostStarted()`, иначе тиков не будет.              |
 | `shutdown()`              | Останавливает адаптер и доставляет события из очереди. Его же вызывает JVM shutdown hook адаптера.          |
 
 Порядок загрузки — в [быстром старте](/ru/adapter/quick-start/).

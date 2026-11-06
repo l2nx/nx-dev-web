@@ -15,7 +15,7 @@ app.l2nx:nx-gs-commons
 ```
 
 Java 8. Тег релиза `commons/vX.Y.Z`. Версии — на
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-commons).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-commons/).
 
 ## Когда нужен хосту
 

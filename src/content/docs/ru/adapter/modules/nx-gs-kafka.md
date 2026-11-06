@@ -16,7 +16,7 @@ app.l2nx:nx-gs-kafka
 ```
 
 Java 8. Тег релиза `kafka/vX.Y.Z`. Версии — на
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-kafka).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-kafka/).
 
 ## Когда нужен хосту
 

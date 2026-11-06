@@ -15,7 +15,7 @@ app.l2nx:nx-gs-adapter-core
 ```
 
 Java 8. Release tag `core/vX.Y.Z`. Versions on
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-adapter-core).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-adapter-core/).
 
 ## When the host needs it
 
@@ -53,6 +53,7 @@ The host talks to the adapter through `app.l2nx.gs.adapter.core.NxAdapter`:
 | `hostExecutor(executor)`  | Executor that runs work on the game side for command handlers. Set it before `start()`.                 |
 | `appRules()`              | Live app settings as `NxAppRules`. Loads the file on the first call; usable before `start()`.           |
 | `migrateSchema()`         | Migrates the `l2nx_*` tables early, for a host that reads them before `start()`. Runs once.             |
+| `runtimeSync()`           | The runtime sync start gate. The host calls `hostStarted()` on it, or runtime sync never ticks.         |
 | `shutdown()`              | Stops the adapter and delivers queued events. The adapter's JVM shutdown hook calls it too.             |
 
 See the [quick start](/adapter/quick-start/) for the boot sequence.

@@ -10,9 +10,10 @@ Steps 1–3 are for the host developer who builds the game server. If your build
 
 ## 1. Add the dependencies
 
-All modules are on Maven Central under the group `app.l2nx`. Each module has its own version: take the latest one
-from [Maven Central](https://central.sonatype.com/namespace/app.l2nx) or the [changelog](/adapter/changelog/) and
-put it in place of `X.Y.Z`.
+All modules are in the `maven-oss` repository under the group `app.l2nx`. Reading needs no login. Other dependencies
+stay on Maven Central. Each module has its own version: take the latest one from
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/) or the [changelog](/adapter/changelog/) and put it in place of `X.Y.Z`. The repository keeps the
+10 latest releases of each module.
 
 A game server needs the core, the schema migrator and Liquibase 5. Sync modules are added as needed (see
 [modules](/adapter/overview/#modules)).
@@ -21,6 +22,19 @@ A game server needs the core, the schema migrator and Liquibase 5. Sync modules 
   <TabItem label="Gradle">
 
 ```kotlin title="build.gradle.kts"
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "l2nx"
+                url = uri("https://artifacts.l2nx.online/repository/maven-oss/")
+            }
+        }
+        filter { includeGroupAndSubgroups("app.l2nx") }
+    }
+    mavenCentral()
+}
+
 dependencies {
     implementation("app.l2nx:nx-gs-adapter-core:X.Y.Z")
     runtimeOnly("app.l2nx:nx-gs-db-migrator-liquibase5:X.Y.Z")
@@ -37,6 +51,13 @@ dependencies {
   <TabItem label="Maven">
 
 ```xml title="pom.xml"
+<repositories>
+  <repository>
+    <id>l2nx</id>
+    <url>https://artifacts.l2nx.online/repository/maven-oss/</url>
+  </repository>
+</repositories>
+
 <dependency>
   <groupId>app.l2nx</groupId>
   <artifactId>nx-gs-adapter-core</artifactId>

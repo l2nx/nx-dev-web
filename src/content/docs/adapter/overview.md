@@ -36,7 +36,7 @@ Both paths are covered in the [quick start](/adapter/quick-start/).
 
 ## Open core
 
-The public modules are open source under the Apache License 2.0 and published to Maven Central as
+The public modules are open source under the Apache License 2.0 and published to the open `maven-oss` repository as
 `app.l2nx:*`. An operator can audit every artifact that loads into the game server JVM, and a build pulls them
 without any private repository.
 

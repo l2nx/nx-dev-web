@@ -16,7 +16,7 @@ app.l2nx:nx-gs-db-migrator-liquibase5
 ```
 
 **Java 17.** Тег релиза `db-migrator-liquibase5/vX.Y.Z`. Версии — на
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-db-migrator-liquibase5).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-db-migrator-liquibase5/).
 
 ## Когда нужен хосту
 

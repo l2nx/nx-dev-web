@@ -10,9 +10,10 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## 1. Добавьте зависимости
 
-Все модули лежат в Maven Central в группе `app.l2nx`. У каждого модуля своя версия: возьмите последнюю на
-[Maven Central](https://central.sonatype.com/namespace/app.l2nx) или в [changelog](/ru/adapter/changelog/) и
-подставьте вместо `X.Y.Z`.
+Все модули лежат в репозитории `maven-oss` в группе `app.l2nx`. Логин для чтения не нужен. Остальные зависимости
+остаются в Maven Central. У каждого модуля своя версия: возьмите последнюю в
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/) или в [changelog](/ru/adapter/changelog/) и подставьте вместо `X.Y.Z`. В репозитории хранятся
+10 последних релизов каждого модуля.
 
 Игровому серверу нужны core, мигратор схемы и Liquibase 5. Модули синхронизации добавляются по необходимости (см.
 [модули](/ru/adapter/overview/#модули)).
@@ -21,6 +22,19 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
   <TabItem label="Gradle">
 
 ```kotlin title="build.gradle.kts"
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "l2nx"
+                url = uri("https://artifacts.l2nx.online/repository/maven-oss/")
+            }
+        }
+        filter { includeGroupAndSubgroups("app.l2nx") }
+    }
+    mavenCentral()
+}
+
 dependencies {
     implementation("app.l2nx:nx-gs-adapter-core:X.Y.Z")
     runtimeOnly("app.l2nx:nx-gs-db-migrator-liquibase5:X.Y.Z")
@@ -37,6 +51,13 @@ dependencies {
   <TabItem label="Maven">
 
 ```xml title="pom.xml"
+<repositories>
+  <repository>
+    <id>l2nx</id>
+    <url>https://artifacts.l2nx.online/repository/maven-oss/</url>
+  </repository>
+</repositories>
+
 <dependency>
   <groupId>app.l2nx</groupId>
   <artifactId>nx-gs-adapter-core</artifactId>

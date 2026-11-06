@@ -16,7 +16,7 @@ app.l2nx:nx-gs-kafka
 ```
 
 Java 8. Release tag `kafka/vX.Y.Z`. Versions on
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-kafka).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-kafka/).
 
 ## When the host needs it
 

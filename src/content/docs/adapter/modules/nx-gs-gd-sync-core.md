@@ -18,7 +18,7 @@ app.l2nx:nx-gs-gd-sync-core
 ```
 
 Java 8. Release tag `gd-sync/vX.Y.Z`. Versions on
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-gd-sync-core).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-gd-sync-core/).
 
 ## When the host needs it
 

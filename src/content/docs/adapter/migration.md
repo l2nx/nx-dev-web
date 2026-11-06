@@ -14,6 +14,46 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.124.0, nx-gs-adapter-core 0.53.0, nx-gs-runtime-sync-core 0.6.0, nx-gs-db-migrations 0.6.0: session results, item snapshots, runtime start gate
+
+**Breaking.** Take the four modules together. Switch
+the host in the release that takes it.
+
+**You must call `NxAdapter.runtimeSync().hostStarted()`, or runtime sync sends nothing.** Call it once, right after you
+publish `ServerStartedEvent`, whether that event went out or is held until the events channel binds. There is no timer
+and no fallback: a host that never calls it gets no ticks. Call `NxAppSessions.hostReady()` before it.
+
+- `CharacterPresenceEvent.charId` is now `characterId`, in the builder and on the wire.
+- Every `charId` and `*CharId` of the api is now `characterId` and `*CharacterId` (`buyerCharId` to `buyerCharacterId`,
+  `targetCharId` to `targetCharacterId`): commands, results, events and `RatingDbDto`. Builder and wire both change.
+- `charName` and `targetCharName` are now `characterName` and `targetCharacterName`, in `ChatMessageEvent` and
+  `TelegramCharacterLinkCommand`. Builder and wire both change.
+- `TransferCharToAccountCommand` is now `TransferCharacterToAccountCommand` and `TelegramCharLinkCommand` is now
+  `TelegramCharacterLinkCommand`, with their `*Result` classes. Commands route by simple class name, so
+  `Nx-Message-Type` changes too: register the handler under the new class, and a sender of the old name gets
+  `UNSUPPORTED_COMMAND`.
+- `CharacterPresenceEvent` takes `result` (`SessionResult`), on `online = false` only. A client session sets it through
+  the builder; an app session gets it from the engine. `activity` is allowed with `source = CLIENT` for
+  `OFFLINE_PRIVATE_STORE` only, the native offline store session.
+- `OfflineSessionHost.takeSessionResult(session)` is a new `default` method answering `null`. Override it to report
+  results. The engine calls it once after every `removeFromWorld`, including a rolled-back start and a character that
+  was never placed, so a recorder you keep by session id can be released there, except when the end races a graceful stop that already kept the block: that end skips the call. It also runs at a graceful
+  stop for each session left open.
+- `OfflineSession.getCarriedResult()` holds the running block after a graceful stop, on the views `placeInWorld` and
+  `startAction` get during a restore. Seed your recorder with it. An empty block means nothing was recorded; `null`
+  means the block was lost, and the end will say `partial`.
+- A result over `SessionResult.MAX_JSON_BYTES` is dropped and the end goes out without it: fold `uniques` into `items`
+  before that.
+- New values: `LogoutReason.SOLD_OUT` and `APP_OVERWEIGHT` (`onActionEnded` accepts the latter), and the refusals
+  `NO_FISHING_EXPERTISE`, `BAIT_LEVEL_MISMATCH`, `INVENTORY_FULL`, `OVERWEIGHT`. `INVENTORY_FULL` and `OVERWEIGHT` carry
+  their numbers, in `CommandProblem.extensions` and in `AppSessionCheckResult`, which requires them through its builder.
+  `APP_INVENTORY_FULL` no longer covers weight.
+- Item forms carry `ItemSnapshot` in `item` in place of their loose fields, and item commands use `characterId`.
+  `BuyLine.attributesForMatch()` is what the buy check compares: an empty map counts as `null`.
+- `ConnectContext` gains `runtimeSync()`: build it with the builder.
+- New key `app.shutdown.result-millis-per-session` in `l2nx-app.properties`, and a migration that adds a column to the
+  adapter's session table, applied at start.
+
 ## nx-gs-adapter-api 0.123.0, nx-gs-adapter-core 0.52.0: chat vocabularies as enums, chat settings, whisper delivery
 
 **Breaking (source) for Java code; the wire strings do not change.** The chat constant classes become enums with the

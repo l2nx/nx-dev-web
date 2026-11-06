@@ -16,7 +16,7 @@ app.l2nx:nx-gs-runtime-sync-core
 ```
 
 Java 8. Release tag `runtime-sync/vX.Y.Z`. Versions on
-[Maven Central](https://central.sonatype.com/artifact/app.l2nx/nx-gs-runtime-sync-core).
+[maven-oss](https://artifacts.l2nx.online/service/rest/repository/browse/maven-oss/app/l2nx/nx-gs-runtime-sync-core/).
 
 ## When the host needs it
 
@@ -27,6 +27,10 @@ When the platform should show live state within seconds. It works next to
 
 One `RuntimeStateProvider` that returns the current in-memory rows of each runtime entity. The module does not touch
 the database.
+
+The host must also declare its start: call `NxAdapter.runtimeSync().hostStarted()` once, right after it publishes
+`ServerStartedEvent`. Ticks start only when the module has started and that call has been made, so a host that never
+makes it sends no runtime data. Until then the module stays `ACTIVE` with no entity stats.
 
 ## Configuration
 
