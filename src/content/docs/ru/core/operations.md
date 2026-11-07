@@ -357,8 +357,10 @@ docker run -d --name game-server --stop-timeout 120 --restart on-failure \
   l2nx/game-server
 ```
 
-Клиентские порты игрового сервера по-прежнему задаются в `.ini`-файлах, поэтому пару логина и игры в Compose пока
-настроить нельзя; запускайте их как дистрибутивы.
+Профиль `load` файла `compose.yaml` репозитория запускает login server, game server, отдельный PostgreSQL, Prometheus и
+load harness в контейнерах (`docker compose --profile load up -d load-db login-server game-server prometheus`). Это одноразовый стенд для нагрузочных прогонов:
+связь login и game идёт без шифрования внутри одной сети контейнеров, а учётные данные фиксированы, поэтому это не
+production-схема. Для production запускайте оба сервера через `docker run`, как выше, или как дистрибутивы.
 
 ## Перезапуск
 
