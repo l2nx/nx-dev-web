@@ -271,7 +271,7 @@ for the thread pools), tagged with `application`, plus `l2nx.network.*` (connect
 client's input queue after each packet it sends, one histogram across all clients for p99 and maximum) and, on the game server, the `l2nx.engine.*` loop metrics (pass time and phases, passes over
 budget, `l2nx.engine.pass.running` (seconds the running pass has taken so far, 0 between passes, so a blocked pass shows before it ends), inbox depth, timers, failures, calls from a thread that does not own the loop; `l2nx.engine.jdbc.on.loop`, the time
 loop threads spend in JDBC calls until database work moves off the loop, with a `WARN` naming the calling code once per site and minute) and `l2nx.legacy.packet` (run time per client
-packet) and `l2nx.value.transaction` (run time of value transactions such as a mail send or receive, tagged `type` and
+packet), `l2nx.session.input` (time of a client input from its arrival in the queue to the end of its handling, by input class) and `l2nx.value.transaction` (run time of value transactions such as a mail send or receive, tagged `type` and
 `outcome`).
 
 ## Logs
