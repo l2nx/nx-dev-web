@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: 'The L2NX integration API for your site and tools: hosts, paths, versioning, pagination, errors and rate limits.'
+description: "The L2NX integration API for your site and tools: hosts, paths, versioning, pagination, errors and rate limits."
 ---
 
 The integration API is the HTTP API that your site, panel or bot calls server to server. Every request is made on
@@ -35,10 +35,10 @@ project's host, a key of another project gets `403 API_KEY_TENANT_MISMATCH`.
 
 ## Headers
 
-| Header          | When                                                                                     |
-| --------------- | ---------------------------------------------------------------------------------------- |
-| `Authorization` | Always: your [API key](/api/authentication/).                                            |
-| `Server-Slug`   | Operations of one game server: the server slug, as in its URLs (`x7`). Game data needs it. |
+| Header          | When                                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------- |
+| `Authorization` | Always: your [API key](/api/authentication/).                                                             |
+| `Server-Slug`   | Operations of one game server: the server slug, as in its URLs (for example `main`). Game data needs it.  |
 | `Client-Ip`     | Calls your server makes on a player's action (redeeming a promo code from a user panel): the player's IP. |
 
 You do not send the project: it comes from the host and the API key. The reference page of each operation lists the
@@ -92,14 +92,14 @@ Errors follow [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) and are returne
 
 Common statuses:
 
-| Status | When                                                                                   |
-| ------ | -------------------------------------------------------------------------------------- |
-| `400`  | Invalid parameters or body.                                                            |
-| `401`  | No API key, or the key is invalid. See [Authentication](/api/authentication/#errors).  |
+| Status | When                                                                                                  |
+| ------ | ----------------------------------------------------------------------------------------------------- |
+| `400`  | Invalid parameters or body.                                                                           |
+| `401`  | No API key, or the key is invalid. See [Authentication](/api/authentication/#errors).                 |
 | `403`  | The key is known but not allowed: revoked, expired, missing scope, another project, project disabled. |
-| `404`  | The resource does not exist or does not belong to your project.                        |
-| `429`  | Rate limit exceeded, see below.                                                        |
-| `5xx`  | Server-side failure. Retry with backoff.                                               |
+| `404`  | The resource does not exist or does not belong to your project.                                       |
+| `429`  | Rate limit exceeded, see below.                                                                       |
+| `5xx`  | Server-side failure. Retry with backoff.                                                              |
 
 ## Rate limits
 
