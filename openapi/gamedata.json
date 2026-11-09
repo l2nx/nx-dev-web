@@ -60,6 +60,12 @@
             "type": "integer"
           }
         },
+        "required": [
+          "number",
+          "size",
+          "totalElements",
+          "totalPages"
+        ],
         "type": "object"
       },
       "PagedModelItemTemplateBriefDto": {
@@ -74,6 +80,10 @@
             "$ref": "#/components/schemas/PageMetadata"
           }
         },
+        "required": [
+          "content",
+          "page"
+        ],
         "type": "object"
       },
       "ProblemDetail": {
@@ -114,7 +124,7 @@
     }
   },
   "info": {
-    "description": "Third-party integration surface of nx-gamedata. Authenticate every request with the tenant API key: `Authorization: Bearer nx_api_...` (scope `gamedata.item-templates:read`). The tenant is the one the key belongs to — do NOT send a `Tenant-Slug` header yourself; DO send `Server-Id` (the game-server UUID) on every call. Wiki-hidden item templates are never returned.",
+    "description": "Third-party integration surface of nx-gamedata. Authenticate every request with the tenant API key: `Authorization: Bearer nx_api_...` (scope `gamedata.item-templates:read`). The tenant is the one the key belongs to — do NOT send a `Tenant-Slug` header yourself; DO send `Server-Slug` (the game-server slug) on every call. Wiki-hidden item templates are never returned.",
     "title": "nx-gamedata — Integration API",
     "version": "v1"
   },
@@ -122,7 +132,7 @@
   "paths": {
     "/gamedata/v1/integration/item-templates": {
       "get": {
-        "description": "Paginated catalog of visible item templates for the scoped server.\nAuthenticate with the tenant API key as `Authorization: Bearer nx_api_...`\nand send `Server-Id`; the tenant is the one the key belongs to.\nThe key needs the `gamedata.item-templates:read` scope.\n\n\n**Filters:**\n- `search` — Matches the numeric item id (exact, when the term parses as an int) or a case-insensitive substring of the localized name (ru/en/uk). From 1 character; blank is ignored.\n- `id` — Exact item-template id, repeatable. Max 200 per request.\n\n**Sort:** `id`; default `id,ASC`",
+        "description": "Paginated catalog of visible item templates for the scoped server.\nAuthenticate with the tenant API key as `Authorization: Bearer nx_api_...`\nand send `Server-Slug` (the game-server slug); the tenant is the one the key belongs to.\nThe key needs the `gamedata.item-templates:read` scope.\n\n\n**Filters:**\n- `search` — Matches the numeric item id (exact, when the term parses as an int) or a case-insensitive substring of the localized name (ru/en/uk). From 1 character; blank is ignored.\n- `id` — Exact item-template id, repeatable. Max 200 per request.\n\n**Sort:** `id`; default `id,ASC`",
         "operationId": "list",
         "parameters": [
           {
@@ -131,7 +141,10 @@
             "name": "search",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           {
@@ -144,7 +157,10 @@
                 "format": "int32",
                 "type": "integer"
               },
-              "type": "array"
+              "type": [
+                "array",
+                "null"
+              ]
             }
           },
           {
@@ -182,9 +198,10 @@
             }
           },
           {
-            "description": "Game-server id (UUID) — scopes the data query.",
+            "description": "Game server slug: the server this operation works on",
+            "example": "your-server",
             "in": "header",
-            "name": "Server-Id",
+            "name": "Server-Slug",
             "required": true,
             "schema": {
               "type": "string"
@@ -210,7 +227,7 @@
                 }
               }
             },
-            "description": "Missing scope headers, server id outside the tenant, or too many ids"
+            "description": "`Server-Slug` header missing (`SERVER_SLUG_REQUIRED`) or too many ids"
           },
           "401": {
             "content": {
@@ -240,7 +257,7 @@
                 }
               }
             },
-            "description": "Not Found"
+            "description": "The key's tenant has no server with this `Server-Slug` (`SERVER_NOT_FOUND`)"
           },
           "409": {
             "content": {
@@ -299,9 +316,10 @@
             }
           },
           {
-            "description": "Game-server id (UUID) — scopes the data query.",
+            "description": "Game server slug: the server this operation works on",
+            "example": "your-server",
             "in": "header",
-            "name": "Server-Id",
+            "name": "Server-Slug",
             "required": true,
             "schema": {
               "type": "string"
@@ -357,7 +375,7 @@
                 }
               }
             },
-            "description": "Unknown or hidden template (`ITEM_TEMPLATE_NOT_FOUND`)"
+            "description": "Unknown or hidden template (`ITEM_TEMPLATE_NOT_FOUND`), or the key's tenant has no server with this `Server-Slug` (`SERVER_NOT_FOUND`)"
           },
           "409": {
             "content": {
