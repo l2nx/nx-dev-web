@@ -162,7 +162,10 @@
             "required": false,
             "schema": {
               "format": "uuid",
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           {
