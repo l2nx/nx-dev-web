@@ -14,6 +14,19 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.127.0, nx-gs-adapter-core 0.55.0, nx-gs-gd-sync-core 0.17.0: Kafka header names without `Nx-`
+
+The adapter now sends and reads Kafka headers without the `Nx-` prefix. Take the three modules together.
+
+- `Nx-Message-Type` is now `Message-Type`, `Nx-Correlation-Id` is now `Correlation-Id`.
+- `Nx-Server-Id` and `Nx-Target-Server-Id` are now one header, `Server-Id`: the source server on every record the
+  adapter publishes, the target server on inbound commands. A command without `Server-Id`, or for another server, is
+  dropped as before.
+- `NxHeaders.NX_SERVER_ID`, `NX_TARGET_SERVER_ID`, `NX_MESSAGE_TYPE` and `NX_CORRELATION_ID` are removed: use
+  `NxHeaders.SERVER_ID`, `MESSAGE_TYPE` and `CORRELATION_ID`. Host code that reads or writes these headers itself
+  switches to the new constants.
+- The platform reads both names and sends both, so game servers can move to the new adapter one at a time.
+
 ## nx-gs-adapter-api 0.125.0, nx-gs-adapter-core 0.54.0: `APP_BAIT_LEVEL_MISMATCH`, `APP_NO_ROD`
 
 Additive: a host that sends neither reason needs no change. Take both modules together: the core is what accepts the
