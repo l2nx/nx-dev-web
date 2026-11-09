@@ -14,6 +14,24 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.125.0, nx-gs-adapter-core 0.54.0: `APP_BAIT_LEVEL_MISMATCH`, `APP_NO_ROD`
+
+Additive: a host that sends neither reason needs no change. Take both modules together: the core is what accepts the
+new reasons from `NxAppSessions.onActionEnded`.
+
+- New end reason `LogoutReason.APP_BAIT_LEVEL_MISMATCH`: the chosen bait left the hand because the character's level
+  left its range. The bait stack is still in the inventory; a stack that is gone stays `APP_OUT_OF_BAIT`.
+- New end reason `LogoutReason.APP_NO_ROD`: the rod left the hands, its conditions failed or it is gone.
+- `APP_INTERRUPTED` no longer covers lost gear. It means the game stopped the placed character's action: it was moved
+  off its spot, the game closed the store, or the action could not resume. A store from the app that the game closed
+  ends with it. A host on an older core still sends `APP_INTERRUPTED` for lost gear until it is restarted on the new
+  core.
+- Core 0.54.0 accepts `APP_TIME_UP` from the host for a session without a plan: an app store whose paid offline time
+  ran out. A session with a plan ends by the engine's own timer, and the core refuses `APP_TIME_UP` for it. Older cores
+  ignore `APP_TIME_UP` from the host.
+- Send a new reason only once the platform accepts it: a new reason reaches the adapter first, then the platform, then
+  the host.
+
 ## nx-gs-adapter-api 0.124.0, nx-gs-adapter-core 0.53.0, nx-gs-runtime-sync-core 0.6.0, nx-gs-db-migrations 0.6.0: session results, item snapshots, runtime start gate
 
 **Breaking.** Take the four modules together. Switch
@@ -64,11 +82,11 @@ update chat with the app is off by default: a host that publishes game chat and 
 
 Renamed types (no deprecated copy):
 
-| Before                                    | After                                                        | Notes                                                                                                                                        |
-| ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kafka.events.chat.WellKnownChatChannels` | `kafka.events.chat.model.ChatChannel`                        | same constant names; `ChatChannel.unknownToken(rawType)` builds `UNKNOWN_<int>`, `ChatChannel.fromToken` reads a token (`null` when unknown) |
-| `kafka.events.chat.ChatMetadataKeys`      | `kafka.events.chat.model.ChatMetadataKey`                    | the map key is `key()` (`source`, `shadowed`, `rawType`, `serverWide`, `undelivered`), not `name()`                                          |
-| `kafka.commands.chat.ChatAudiences`       | `kafka.commands.chat.model.ChatAudience`                     | same constant names                                                                                                                          |
+| Before                                    | After                                     | Notes                                                                                                                                        |
+| ----------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kafka.events.chat.WellKnownChatChannels` | `kafka.events.chat.model.ChatChannel`     | same constant names; `ChatChannel.unknownToken(rawType)` builds `UNKNOWN_<int>`, `ChatChannel.fromToken` reads a token (`null` when unknown) |
+| `kafka.events.chat.ChatMetadataKeys`      | `kafka.events.chat.model.ChatMetadataKey` | the map key is `key()` (`source`, `shadowed`, `rawType`, `serverWide`, `undelivered`), not `name()`                                          |
+| `kafka.commands.chat.ChatAudiences`       | `kafka.commands.chat.model.ChatAudience`  | same constant names                                                                                                                          |
 
 `ChatMessageEvent.channel`, `SendChatMessageCommand.channel` and `.audience` stay strings; their builders also take
 the enums. Code that put a constant string into `metadata` now writes `ChatMetadataKey.X.key()`.

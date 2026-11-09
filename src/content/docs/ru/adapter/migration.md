@@ -14,6 +14,26 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.125.0, nx-gs-adapter-core 0.54.0: `APP_BAIT_LEVEL_MISMATCH`, `APP_NO_ROD`
+
+Только добавления: хосту, который не отправляет ни одну из этих причин, ничего менять не нужно. Берите оба модуля
+вместе: новые причины от `NxAppSessions.onActionEnded` принимает core.
+
+- Новая причина завершения `LogoutReason.APP_BAIT_LEVEL_MISMATCH`: выбранная наживка ушла из руки, потому что уровень
+  персонажа вышел из её диапазона. Стопка наживки при этом ещё в инвентаре; если стопки нет, причина остаётся
+  `APP_OUT_OF_BAIT`.
+- Новая причина завершения `LogoutReason.APP_NO_ROD`: удочка ушла из рук, её условия перестали выполняться или её
+  больше нет.
+- `APP_INTERRUPTED` больше не означает потерю снаряжения. Это игра остановила действие поставленного персонажа: его
+  сдвинули со спота, игра закрыла лавку или действие не удалось возобновить. Лавка из приложения, которую закрыла
+  игра, завершается с этой причиной. Хост на старом core до перезапуска отправляет `APP_INTERRUPTED` и для потери
+  снаряжения.
+- Core 0.54.0 принимает от хоста `APP_TIME_UP` для сессии без плана: лавки из приложения, у которой закончилось
+  оплаченное оффлайн-время. Сессия с планом завершается собственным таймером движка, и для неё core `APP_TIME_UP`
+  отклоняет. Старые core игнорируют `APP_TIME_UP` от хоста.
+- Отправляйте новую причину только когда платформа её принимает: новая причина сначала появляется в адаптере, затем на
+  платформе, затем в хосте.
+
 ## nx-gs-adapter-api 0.124.0, nx-gs-adapter-core 0.53.0, nx-gs-runtime-sync-core 0.6.0, nx-gs-db-migrations 0.6.0: результаты сессий, снимки предметов, старт runtime-синхронизации
 
 **Ломающее изменение.** Берите все четыре модуля вместе. Хост
@@ -65,11 +85,11 @@ description: Шаги обновления адаптера через breaking 
 
 Переименованные типы (без deprecated-копий):
 
-| Было                                      | Стало                                                     | Примечание                                                                                                                                       |
-| ----------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `kafka.events.chat.WellKnownChatChannels` | `kafka.events.chat.model.ChatChannel`                     | те же имена констант; `ChatChannel.unknownToken(rawType)` строит `UNKNOWN_<int>`, `ChatChannel.fromToken` читает токен (`null`, если неизвестен) |
-| `kafka.events.chat.ChatMetadataKeys`      | `kafka.events.chat.model.ChatMetadataKey`                 | ключ в map — `key()` (`source`, `shadowed`, `rawType`, `serverWide`, `undelivered`), не `name()`                                                 |
-| `kafka.commands.chat.ChatAudiences`       | `kafka.commands.chat.model.ChatAudience`                  | те же имена констант                                                                                                                             |
+| Было                                      | Стало                                     | Примечание                                                                                                                                       |
+| ----------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `kafka.events.chat.WellKnownChatChannels` | `kafka.events.chat.model.ChatChannel`     | те же имена констант; `ChatChannel.unknownToken(rawType)` строит `UNKNOWN_<int>`, `ChatChannel.fromToken` читает токен (`null`, если неизвестен) |
+| `kafka.events.chat.ChatMetadataKeys`      | `kafka.events.chat.model.ChatMetadataKey` | ключ в map — `key()` (`source`, `shadowed`, `rawType`, `serverWide`, `undelivered`), не `name()`                                                 |
+| `kafka.commands.chat.ChatAudiences`       | `kafka.commands.chat.model.ChatAudience`  | те же имена констант                                                                                                                             |
 
 `ChatMessageEvent.channel`, `SendChatMessageCommand.channel` и `.audience` остаются строками; их билдеры принимают и
 enum. Код, который клал строковую константу в `metadata`, теперь пишет `ChatMetadataKey.X.key()`.
