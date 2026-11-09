@@ -33,8 +33,19 @@ https://{host}/{service}/v{N}/integration/...
 On the project host `{tenant}` is your project slug. The project comes from the API key: a key works only on its own
 project's host, a key of another project gets `403 API_KEY_TENANT_MISMATCH`.
 
-Some endpoints need extra headers, for example the game server id for game data. The reference page of each
-operation lists them.
+## Headers
+
+| Header          | When                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `Authorization` | Always: your [API key](/api/authentication/).                                            |
+| `Server-Slug`   | Operations of one game server: the server slug, as in its URLs (`x7`). Game data needs it. |
+| `Client-Ip`     | Calls your server makes on a player's action (redeeming a promo code from a user panel): the player's IP. |
+
+You do not send the project: it comes from the host and the API key. The reference page of each operation lists the
+headers it reads; an operation of one game server answers `400 SERVER_SLUG_REQUIRED` without `Server-Slug` and
+`404 SERVER_NOT_FOUND` for a server your project does not have. `Client-Ip` is honoured only from your server's
+addresses registered with the platform; from any other address the platform uses the connection address. Ask
+[support](/support/) to register them.
 
 ## Versioning
 
