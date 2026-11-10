@@ -269,11 +269,11 @@ curl -s -X POST -H 'Content-Type: application/json' -d '{"configuredLevel":"DEBU
 ```
 
 Метрики — стандартные для Spring Boot (JVM, процесс, система, события лога, `hikaricp.*`, `tomcat.*`, `executor.*` для
-пулов потоков) с тегом `application`, плюс `l2nx.network.*` (соединения, байты, отброшенное, закрытия по причинам),
+пулов потоков) с тегом `application`, плюс `l2nx.network.*` (соединения, байты, отброшенное, закрытия по причинам, `l2nx.network.outbound.handoffs` — исходящие drain, переданные event loop, по циклам),
 `grpc.server.*` / `grpc.client.*` для GS-link, `l2nx.players.online`, `l2nx.session.queue.depth` (число элементов во
 входной очереди клиента после каждого присланного им пакета, одна histogram по всем клиентам для p99 и максимума) и, на игровом сервере, метрики циклов `l2nx.engine.*` (время pass и фаз, pass сверх
 бюджета, `l2nx.engine.pass.running` (сколько секунд уже идёт текущий pass, 0 между pass, так что зависший pass виден до его конца), глубина inbox, таймеры, сбои, вызовы с потока, который не владеет циклом; `l2nx.engine.jdbc.on.loop` — время
-вызовов JDBC на потоках циклов, пока работа с базой не уйдёт с цикла; `WARN` называет вызывающий код раз в минуту на каждое место вызова) и `l2nx.legacy.packet`
+вызовов JDBC на потоках циклов, пока работа с базой не уйдёт с цикла; `WARN` называет вызывающий код раз в минуту на каждое место вызова; `l2nx.engine.jdbc.on.loop.statements` — те же вызовы по `loop` и `kind`, `read` или `write`) и `l2nx.legacy.packet`
 (время выполнения клиентского пакета), `l2nx.session.input` (время клиентского ввода от постановки в очередь до конца обработки, по классу ввода) и `l2nx.value.transaction` (время выполнения value transactions, например
 отправки или получения письма, с тегами `type` и `outcome`).
 

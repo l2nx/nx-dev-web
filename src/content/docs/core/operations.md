@@ -266,11 +266,11 @@ curl -s -X POST -H 'Content-Type: application/json' -d '{"configuredLevel":"DEBU
 ```
 
 Metrics are the standard Spring Boot ones (JVM, process, system, log events, `hikaricp.*`, `tomcat.*`, `executor.*`
-for the thread pools), tagged with `application`, plus `l2nx.network.*` (connections, bytes, drops, closes by reason),
+for the thread pools), tagged with `application`, plus `l2nx.network.*` (connections, bytes, drops, closes by reason, `l2nx.network.outbound.handoffs`: outbound drains handed to an event loop, per loop),
 `grpc.server.*` / `grpc.client.*` for the GS-link, `l2nx.players.online`, `l2nx.session.queue.depth` (items in a
 client's input queue after each packet it sends, one histogram across all clients for p99 and maximum) and, on the game server, the `l2nx.engine.*` loop metrics (pass time and phases, passes over
 budget, `l2nx.engine.pass.running` (seconds the running pass has taken so far, 0 between passes, so a blocked pass shows before it ends), inbox depth, timers, failures, calls from a thread that does not own the loop; `l2nx.engine.jdbc.on.loop`, the time
-loop threads spend in JDBC calls until database work moves off the loop, with a `WARN` naming the calling code once per site and minute) and `l2nx.legacy.packet` (run time per client
+loop threads spend in JDBC calls until database work moves off the loop, with a `WARN` naming the calling code once per site and minute; `l2nx.engine.jdbc.on.loop.statements`, the same calls counted by `loop` and `kind`, `read` or `write`) and `l2nx.legacy.packet` (run time per client
 packet), `l2nx.session.input` (time of a client input from its arrival in the queue to the end of its handling, by input class) and `l2nx.value.transaction` (run time of value transactions such as a mail send or receive, tagged `type` and
 `outcome`).
 
