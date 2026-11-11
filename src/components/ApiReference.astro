@@ -1,0 +1,156 @@
+---
+interface Operation {
+  summary?: string;
+  description?: string;
+}
+
+interface Props {
+  spec: {
+    paths?: Record<string, Record<string, Operation>>;
+    webhooks?: Record<string, Record<string, Operation>>;
+  };
+  specUrl: string;
+  lang: 'en' | 'ru';
+}
+
+const { spec, specUrl, lang } = Astro.props;
+
+const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'head', 'options'];
+
+const plain = (markdown?: string) =>
+  markdown
+    ?.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const entries = (items: Record<string, Record<string, Operation>> | undefined, webhook: boolean) =>
+  Object.entries(items ?? {}).flatMap(([name, item]) =>
+    METHODS.filter((method) => item[method]).map((method) => ({
+      anchor: webhook ? `op-webhook-${name}` : `op-${method}-${name}`,
+      label: webhook ? `webhook ${name}` : `${method.toUpperCase()} ${name}`,
+      summary: item[method].summary,
+      description: plain(item[method].description),
+    })),
+  );
+
+// Scalar renders client-side, so Pagefind needs this static copy; heading ids are the anchors scrollToOperation resolves.
+const operations = [...entries(spec.paths, false), ...entries(spec.webhooks, true)];
+---
+
+<div class="api-reference not-content" data-spec-url={specUrl} data-lang={lang}></div>
+
+<section class="api-operations-index" aria-hidden="true">
+  {
+    operations.map((op) => (
+      <article>
+        <h2 id={op.anchor}>{op.summary ?? op.label}</h2>
+        <p>
+          <code>{op.label}</code>
+        </p>
+        {op.description && <p>{op.description}</p>}
+      </article>
+    ))
+  }
+</section>
+
+<script>
+  import { createApiReference } from '@scalar/api-reference';
+  import '@scalar/api-reference/style.css';
+
+  for (const element of document.querySelectorAll<HTMLElement>('.api-reference')) {
+    createApiReference(element, {
+      url: element.dataset.specUrl,
+      localization: { locale: element.dataset.lang },
+      layout: 'modern',
+      theme: 'none',
+      forceDarkModeState: 'dark',
+      hideDarkModeToggle: true,
+      withDefaultFonts: false,
+      documentDownloadType: 'json',
+      // TODO: enable Try-it once self-service API keys and CORS exist on the API hosts.
+      hideTestRequestButton: true,
+      hideClientButton: true,
+      telemetry: false,
+      agent: { disabled: true },
+      showDeveloperTools: 'never',
+      defaultOpenAllTags: true,
+    });
+  }
+
+  // Scalar ids end with "<METHOD><path>" or contain "webhook/<name>" and exist only after it renders, hence the retry.
+  function scrollToOperation(attempt = 0) {
+    const match = decodeURIComponent(location.hash).match(/^#op-([a-z]+)-(.+)$/);
+    if (!match) {
+      return;
+    }
+    const [, method, name] = match;
+    const target = [...document.querySelectorAll<HTMLElement>('.api-reference [id]')].find((element) =>
+      method === 'webhook'
+        ? element.id.includes('webhook/') && element.id.endsWith(name)
+        : element.id.endsWith(`${method.toUpperCase()}${name}`),
+    );
+    if (target) {
+      target.scrollIntoView();
+    } else if (attempt < 50) {
+      setTimeout(() => scrollToOperation(attempt + 1), 100);
+    }
+  }
+
+  scrollToOperation();
+  window.addEventListener('hashchange', () => scrollToOperation());
+</script>
+
+<style is:global>
+  :root:has(.api-reference) .content-panel {
+    padding: 0;
+  }
+  :root:has(.api-reference) .content-panel > .sl-container {
+    max-width: none;
+  }
+  :root:has(.api-reference) .content-panel:has(h1#_top) {
+    display: none;
+  }
+
+  .api-operations-index {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .api-reference {
+    --scalar-custom-header-height: var(--sl-nav-height);
+  }
+
+  .api-reference .dark-mode,
+  .dark-mode .api-reference,
+  .api-reference {
+    --scalar-font: "Onest Variable", ui-sans-serif, system-ui, sans-serif;
+    --scalar-font-code: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --scalar-background-1: var(--background);
+    --scalar-background-2: var(--card);
+    --scalar-background-3: var(--surface-solid);
+    --scalar-background-accent: var(--sl-color-accent-low);
+    --scalar-color-1: var(--foreground);
+    --scalar-color-2: var(--muted-foreground);
+    --scalar-color-3: var(--faint-foreground);
+    --scalar-color-accent: var(--sl-color-accent);
+    --scalar-border-color: var(--border);
+    --scalar-sidebar-background-1: var(--background);
+    --scalar-sidebar-color-1: var(--foreground);
+    --scalar-sidebar-color-2: var(--muted-foreground);
+    --scalar-sidebar-border-color: var(--border);
+    --scalar-sidebar-item-hover-background: var(--surface-hover);
+    --scalar-sidebar-item-active-background: var(--sl-color-accent-low);
+    --scalar-sidebar-color-active: var(--sl-color-accent-high);
+    --scalar-color-green: var(--success);
+    --scalar-color-red: var(--error);
+    --scalar-color-yellow: var(--warning);
+    --scalar-color-blue: var(--info);
+    --scalar-color-orange: var(--accent-gold);
+    --scalar-color-purple: var(--accent-violet);
+  }
+</style>

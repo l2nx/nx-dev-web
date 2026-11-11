@@ -1,9 +1,10 @@
 ---
 title: Authentication
-description: Authenticate integration API requests with a project API key; key format, scopes and errors.
+description: Authenticate integration API requests with a tenant API key; key format, scopes and errors.
 ---
 
-Every integration API request carries your project's API key in the `Authorization` header:
+Every integration API request carries the API key of your tenant — your project on the L2NX platform — in the
+`Authorization` header:
 
 ```http title="Request"
 GET /top/v1/integration/votes?limit=100 HTTP/1.1
@@ -16,8 +17,8 @@ curl -H "Authorization: Bearer $L2NX_API_KEY" \
   "https://api.l2nx.top/top/v1/integration/votes?limit=100"
 ```
 
-The key identifies the project. You never pass the project in the request: every call works on the data of the
-project the key belongs to.
+The key identifies the tenant. You never pass the tenant in the request: every call works on the data of the tenant the
+key belongs to.
 
 ## Key format
 
@@ -52,21 +53,22 @@ Errors are [problem+json](/api/overview/#errors) responses.
 | `401`  | none                      | No `Authorization: Bearer` header, a malformed key, or an unknown key. |
 | `403`  | `API_KEY_REVOKED`         | The key was revoked.                                                   |
 | `403`  | `API_KEY_EXPIRED`         | The key is past its expiry date.                                       |
-| `403`  | `TENANT_DISABLED`         | The project is disabled on the platform.                               |
-| `403`  | `API_KEY_TENANT_MISMATCH` | The key belongs to another project than the host you called.           |
+| `403`  | `TENANT_SUSPENDED`        | The tenant is suspended (on a shared host such as `api.l2nx.top`).     |
+| `403`  | `TENANT_CLOSED`           | The tenant is closed (on a shared host such as `api.l2nx.top`).        |
+| `404`  | `TENANT_NOT_FOUND`        | On your tenant host: the tenant is unknown, suspended or closed.       |
+| `403`  | `API_KEY_TENANT_MISMATCH` | The key belongs to another tenant than the host you called.            |
 | `403`  | `INSUFFICIENT_SCOPE`      | The key lacks the scope this endpoint requires.                        |
 
-A `401` never tells whether a key exists: an unknown key and a wrong one look the same. Do not retry `401` or `403`
-with the same key; fix the key or request a new one.
+A `401` never tells whether a key exists: an unknown key and a wrong one look the same. Do not retry `401` or `403` with
+the same key; fix the key or request a new one.
 
 ## Getting a key
 
-Keys are issued on request: write to [support@l2nx.app](mailto:support@l2nx.app) with your project and the scopes you
+Keys are issued on request: write to [support@l2nx.app](mailto:support@l2nx.app) with your tenant and the scopes you
 need. For l2nx.top votes see [Getting access](/top/getting-access/).
 
 The key is shown once. Revocation takes effect within a minute.
 
-:::caution[Keep the key on your server]
-An API key acts for your whole project. Use it only from server-side code. Never put it in a browser, a mobile app,
-the game client, a public repository or logs. If a key may have leaked, ask support to revoke it at once.
-:::
+:::caution[Keep the key on your server] An API key acts for your whole tenant. Use it only from server-side code. Never
+put it in a browser, a mobile app, the game client, a public repository or logs. If a key may have leaked, ask support
+to revoke it at once. :::

@@ -1,0 +1,21 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import ApiReference from '../../../../components/ApiReference.astro';
+import { apiStaticPaths, readSpec, specTitle } from '../../../../lib/openapi-specs.mjs';
+
+export const getStaticPaths = apiStaticPaths;
+
+const { locale, service } = Astro.params as { locale?: string; service: string };
+const { lang } = Astro.props as { lang: 'en' | 'ru' };
+const spec = readSpec(service, lang);
+const title = specTitle(service, lang);
+const base = locale ? `/${locale}` : '';
+const description =
+  lang === 'ru'
+    ? `Справочник integration API: ${title}. Операции, схемы, ошибки и OpenAPI JSON для скачивания.`
+    : `Integration API reference: ${title}. Operations, schemas, errors and a downloadable OpenAPI JSON.`;
+---
+
+<StarlightPage frontmatter={{ title, description, template: 'splash', tableOfContents: false }}>
+  <ApiReference spec={spec} specUrl={`${base}/api/${service}/openapi.json`} lang={lang} />
+</StarlightPage>

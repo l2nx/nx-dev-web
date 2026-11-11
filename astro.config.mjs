@@ -1,26 +1,26 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import mermaid from 'astro-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
-import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
+import { apiServices, specTitle } from './src/lib/openapi-specs.mjs';
 
 const SITE = 'https://l2nx.dev';
 
-const openApiDir = fileURLToPath(new URL('./openapi/', import.meta.url));
-const openApiSchemas = readdirSync(openApiDir)
-  .filter((file) => file.endsWith('.json'))
-  .sort()
-  .map((file) => {
-    const service = file.slice(0, -'.json'.length);
-    const { info } = JSON.parse(readFileSync(`${openApiDir}${file}`, 'utf8'));
-    return { base: `api/${service}`, schema: `./openapi/${file}`, sidebar: { label: info?.title ?? service } };
-  });
+const apiServiceLinks = apiServices().map((service) => ({
+  label: specTitle(service, 'en'),
+  translations: { ru: specTitle(service, 'ru') },
+  link: `/api/${service}/`,
+}));
 
-// The section was published as /l2/ before it became L2NX Core; a dynamic redirect cannot target Starlight's
-// catch-all route, so each page gets its own.
+// The validator cannot resolve these StarlightPage routes (InvalidLinkToCustomPage); other /api/ links stay checked.
+const apiReferenceRoutes = apiServices().flatMap((service) =>
+  ['', '/ru'].flatMap((prefix) => [`${prefix}/api/${service}/`, `${prefix}/api/${service}/openapi.json`]),
+);
+
+// Legacy /l2/ URLs: a dynamic redirect cannot target Starlight's catch-all route, so one redirect per page.
 const coreDir = fileURLToPath(new URL('./src/content/docs/core/', import.meta.url));
 const legacyCoreRedirects = Object.fromEntries(
   readdirSync(coreDir)
@@ -38,7 +38,6 @@ export default defineConfig({
   redirects: legacyCoreRedirects,
   integrations: [
     // Must precede Starlight: it rewrites mermaid code blocks before Starlight renders them.
-    // The portal is dark only: a fixed base theme in the @l2nx/ui palette instead of mermaid's grey dark theme.
     mermaid({
       theme: 'base',
       autoTheme: false,
@@ -147,14 +146,13 @@ export default defineConfig({
         {
           label: 'Integration API',
           translations: { ru: 'Integration API' },
-          items: ['api/overview', 'api/authentication', ...(openApiSchemas.length > 0 ? openAPISidebarGroups : [])],
+          items: ['api/overview', 'api/authentication', ...apiServiceLinks],
         },
         { slug: 'support' },
       ],
       plugins: [
-        starlightLinksValidator(),
+        starlightLinksValidator({ exclude: apiReferenceRoutes }),
         starlightLlmsTxt({ projectName: 'L2NX', description: 'Developer documentation for the L2NX platform.' }),
-        ...(openApiSchemas.length > 0 ? [starlightOpenAPI(openApiSchemas)] : []),
       ],
     }),
   ],

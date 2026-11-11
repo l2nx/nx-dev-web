@@ -15,7 +15,6 @@ version=$3
 [ -d "$2" ] || die "source repo dir not found: $2"
 source_dir=$(cd "$2" && pwd)
 
-# Paths relative to the section root that the portal owns; the source must not ship them.
 case "$section" in
   adapter) excludes=(changelog.mdx) ;;
   top) excludes=() ;;
@@ -37,21 +36,13 @@ dst_ru=src/content/docs/ru/$section
 [ -d "$src_en" ] || die "missing $src_en"
 [ -d "$src_ru" ] || die "missing $src_ru"
 
-patterns_file=
 npmrc_file=
 check_image=
 cleanup() {
-  [ -z "$patterns_file" ] || rm -f "$patterns_file"
   [ -z "$npmrc_file" ] || rm -f "$npmrc_file"
   [ -z "$check_image" ] || docker image rm -f "$check_image" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
-
-patterns_file=$(mktemp)
-# Patterns pasted into the secrets UI often carry stray spaces; a trailing one would make a pattern miss.
-printf '%s\n' "$DOCS_DENYLIST" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$' \
-  >"$patterns_file" || true
-[ -s "$patterns_file" ] || die "DOCS_DENYLIST has no patterns"
 
 # The runner is itself a container, so the build check uses the BuildKit secret instead of bind-mounting the tree.
 npmrc_file=$(mktemp)
@@ -102,24 +93,12 @@ mirror() {
   find "$dst" -mindepth 1 -type d -empty -delete
 }
 
-# Only file:line or a count is printed: the matched text, a file name or a pattern would leak into public Actions logs.
 denylist() {
-  local rc=0 hit_files hit_names file
-  hit_files=$(grep -rlIiE -f "$patterns_file" -- "$dst_en" "$dst_ru") || rc=$?
-  [ "$rc" -le 1 ] || die "denylist grep failed (invalid pattern?)"
-  # File names become public URL slugs, so they pass the same denylist.
-  hit_names=$(find "$dst_en" "$dst_ru" -type f | grep -ciE -f "$patterns_file" || true)
-  [ "$hit_names" -eq 0 ] || die "denylist match in $hit_names file name(s) of synced $section docs; rename them in the source repo"
-  if [ -n "$hit_files" ]; then
-    while IFS= read -r file; do
-      grep -nIiE -f "$patterns_file" -- "$file" | cut -d: -f1 | while IFS= read -r line; do echo "$file:$line"; done
-    done <<<"$hit_files"
-    die "denylist match in synced $section docs; fix the pages in the source repo"
-  fi
+  bash scripts/check-denylist.sh "$dst_en" "$dst_ru" ||
+    die "denylist match in synced $section docs; fix the pages (or file names) in the source repo"
 }
 
-# Each attempt restarts from the current main and re-runs the guard: parallel syncs of one section serialize here,
-# not through a concurrency group (it would cancel a pending run).
+# Parallel syncs of one section serialize through this retry from the current main, not a concurrency group (it cancels pending runs).
 for i in 1 2 3 4 5; do
   git fetch -q origin main
   git reset -q --hard origin/main

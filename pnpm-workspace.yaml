@@ -1,2 +1,4 @@
+allowBuilds:
+  vue-demi: true
 minimumReleaseAgeExclude:
   - '@l2nx/ui@0.4.0'
