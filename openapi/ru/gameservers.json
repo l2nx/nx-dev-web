@@ -1,0 +1,220 @@
+{
+  "components": {
+    "schemas": {
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RedeemResponse": {
+        "description": "Результат активации: все поля, кроме `outcome`, равны null, если активация не удалась",
+        "properties": {
+          "deliveryStatus": {
+            "description": "Доставка награды: PENDING (игровой сервер ещё не ответил), SENT или FAILED",
+            "enum": [
+              "PENDING",
+              "SENT",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "items": {
+            "description": "Предметы награды промокода",
+            "items": {
+              "$ref": "#/components/schemas/RewardItemDto"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "Название активированного промокода",
+            "type": "string"
+          },
+          "outcome": {
+            "description": "Бизнес-исход активации",
+            "enum": [
+              "SUCCESS",
+              "INVALID_CODE",
+              "ALREADY_REDEEMED",
+              "GROUP_ALREADY_USED",
+              "CHARACTER_NOT_FOUND"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RewardItemDto": {
+        "description": "Предмет награды",
+        "properties": {
+          "count": {
+            "description": "Количество предметов",
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "itemTemplateId": {
+            "description": "Id шаблона предмета",
+            "exclusiveMinimum": 0,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UserPanelRedeemRequest": {
+        "description": "Активация промокода от имени личного кабинета",
+        "properties": {
+          "characterId": {
+            "description": "Id персонажа, который получает награду",
+            "exclusiveMinimum": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "code": {
+            "description": "Промокод в том виде, в каком его ввёл игрок",
+            "minLength": 1,
+            "type": "string"
+          },
+          "serverId": {
+            "description": "Id игрового сервера, на котором активируется промокод",
+            "format": "uuid",
+            "type": "string"
+          },
+          "userId": {
+            "description": "Id пользователя в вашем личном кабинете, сохраняется вместе с активацией; необязательный",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "serverId"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "platformApiKey": {
+        "bearerFormat": "nx_api_…",
+        "description": "API key тенанта в заголовке `Authorization: Bearer nx_api_...`. Ключ определяет тенант; scopes ключа определяют, какие операции ему доступны.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Интеграционный API nx-gameservers для сторонних систем. Аутентификация — API key вашего тенанта (тенант — проект на платформе L2NX) в заголовке `Authorization: Bearer nx_api_...` в каждом запросе. Как получить ключ и какие ошибки он даёт — [Аутентификация](https://l2nx.dev/ru/api/authentication/). Для активации промокодов нужен scope `gameservers.promo:redeem`. Тенант запроса — тот, которому принадлежит API key; ключ, предъявленный на хосте другого тенанта, отклоняется с 403 `API_KEY_TENANT_MISMATCH`. Не передавайте заголовок `Tenant-Slug` сами.",
+    "title": "nx-gameservers — Integration API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/gameservers/v1/integration/promo/redeem": {
+      "post": {
+        "description": "Активирует промокод для указанного персонажа от имени личного кабинета. Аутентификация — API key тенанта в заголовке `Authorization: Bearer nx_api_...`.\n\nHTTP 200 возвращается при любом бизнес-исходе — смотрите `outcome` (SUCCESS / INVALID_CODE / ALREADY_REDEEMED / GROUP_ALREADY_USED / CHARACTER_NOT_FOUND).\n\nHTTP 503 означает, что награда не выдана и промокод не израсходован, — повторите запрос через `Retry-After` секунд.",
+        "operationId": "redeem",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPanelRedeemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedeemResponse"
+                }
+              }
+            },
+            "description": "Активация обработана; результат — в `outcome`"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Тело запроса не разобрано или не прошло проверку; при ошибке проверки `fields` перечисляет неверные поля"
+          },
+          "401": {
+            "description": "Нет заголовка `Authorization: Bearer`, ключ неверного формата или неизвестен"
+          },
+          "403": {
+            "description": "Ключ здесь не допущен; `code` — `API_KEY_REVOKED`, `API_KEY_EXPIRED`, `TENANT_SUSPENDED`, `TENANT_CLOSED` (на общем хосте; на хосте тенанта приостановленный или закрытый тенант получает `404 TENANT_NOT_FOUND`), `API_KEY_TENANT_MISMATCH` (ключ другого тенанта, чем хост) или `INSUFFICIENT_SCOPE`"
+          },
+          "404": {
+            "description": "На хосте тенанта: тенант неизвестен, приостановлен или закрыт (`TENANT_NOT_FOUND`)"
+          },
+          "429": {
+            "description": "Слишком много запросов этим ключом к этой операции (`RATE_LIMITED`); лимиты: https://l2nx.dev/ru/api/overview/#rate-limits"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Игровой сервер недоступен (без `code`) или отклонил письмо с наградой до его выполнения (`code` = PROMO_REWARD_NOT_DELIVERED); ничего не выдано, промокод не израсходован; повторите запрос через `Retry-After` секунд"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Активировать промокод для персонажа (личный кабинет)",
+        "tags": [
+          "Промокоды — интеграция"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "platformApiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Боевой шлюз (хост тенанта)",
+      "url": "https://{tenant}.api.l2nx.app",
+      "variables": {
+        "tenant": {
+          "default": "your-tenant",
+          "description": "Slug тенанта: префикс вашего хоста API"
+        }
+      }
+    }
+  ]
+}
