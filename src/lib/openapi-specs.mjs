@@ -38,3 +38,27 @@ export function apiStaticPaths() {
     apiServices().map((service) => ({ params: { locale, service }, props: { lang } })),
   );
 }
+
+const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'head', 'options'];
+
+const plain = (markdown) =>
+  markdown
+    ?.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// Anchors are the contract between the sidebar links, the hidden Pagefind index and scrollToOperation.
+export function apiOperations(service, lang) {
+  const spec = readSpec(service, lang);
+  const entries = (items, webhook) =>
+    Object.entries(items ?? {}).flatMap(([name, item]) =>
+      METHODS.filter((method) => item[method]).map((method) => ({
+        anchor: webhook ? `op-webhook-${name}` : `op-${method}-${name}`,
+        label: webhook ? `webhook ${name}` : `${method.toUpperCase()} ${name}`,
+        summary: item[method].summary,
+        description: plain(item[method].description),
+      })),
+    );
+  return [...entries(spec.paths, false), ...entries(spec.webhooks, true)];
+}

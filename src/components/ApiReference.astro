@@ -1,41 +1,16 @@
 ---
-interface Operation {
-  summary?: string;
-  description?: string;
-}
+import { apiOperations } from '../lib/openapi-specs.mjs';
 
 interface Props {
-  spec: {
-    paths?: Record<string, Record<string, Operation>>;
-    webhooks?: Record<string, Record<string, Operation>>;
-  };
+  service: string;
   specUrl: string;
   lang: 'en' | 'ru';
 }
 
-const { spec, specUrl, lang } = Astro.props;
-
-const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'head', 'options'];
-
-const plain = (markdown?: string) =>
-  markdown
-    ?.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/[*_`]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const entries = (items: Record<string, Record<string, Operation>> | undefined, webhook: boolean) =>
-  Object.entries(items ?? {}).flatMap(([name, item]) =>
-    METHODS.filter((method) => item[method]).map((method) => ({
-      anchor: webhook ? `op-webhook-${name}` : `op-${method}-${name}`,
-      label: webhook ? `webhook ${name}` : `${method.toUpperCase()} ${name}`,
-      summary: item[method].summary,
-      description: plain(item[method].description),
-    })),
-  );
+const { service, specUrl, lang } = Astro.props;
 
 // Scalar renders client-side, so Pagefind needs this static copy; heading ids are the anchors scrollToOperation resolves.
-const operations = [...entries(spec.paths, false), ...entries(spec.webhooks, true)];
+const operations = apiOperations(service, lang);
 ---
 
 <div class="api-reference not-content" data-spec-url={specUrl} data-lang={lang}></div>
@@ -63,6 +38,9 @@ const operations = [...entries(spec.paths, false), ...entries(spec.webhooks, tru
       url: element.dataset.specUrl,
       localization: { locale: element.dataset.lang },
       layout: 'modern',
+      // The portal's own sidebar lists the operations: one menu and one search across the site.
+      showSidebar: false,
+      hideSearch: true,
       theme: 'none',
       forceDarkModeState: 'dark',
       hideDarkModeToggle: true,
@@ -79,8 +57,11 @@ const operations = [...entries(spec.paths, false), ...entries(spec.webhooks, tru
   }
 
   // Scalar ids end with "<METHOD><path>" or contain "webhook/<name>" and exist only after it renders, hence the retry.
+  // Sidebar links arrive with a trailing slash: Starlight's trailingSlash 'always' appends it after the hash too.
   function scrollToOperation(attempt = 0) {
-    const match = decodeURIComponent(location.hash).match(/^#op-([a-z]+)-(.+)$/);
+    const match = decodeURIComponent(location.hash)
+      .replace(/\/$/, '')
+      .match(/^#op-([a-z]+)-(.+)$/);
     if (!match) {
       return;
     }

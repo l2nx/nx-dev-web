@@ -5,15 +5,27 @@ import { defineConfig } from 'astro/config';
 import mermaid from 'astro-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
-import { apiServices, specTitle } from './src/lib/openapi-specs.mjs';
+import { apiOperations, apiServices, specTitle } from './src/lib/openapi-specs.mjs';
 
 const SITE = 'https://l2nx.dev';
 
-const apiServiceLinks = apiServices().map((service) => ({
-  label: specTitle(service, 'en'),
-  translations: { ru: specTitle(service, 'ru') },
-  link: `/api/${service}/`,
-}));
+// One group per service: its reference page, then every operation as an anchor that scrollToOperation resolves.
+const apiServiceLinks = apiServices().map((service) => {
+  const russian = new Map(apiOperations(service, 'ru').map((op) => [op.anchor, op.summary ?? op.label]));
+  return {
+    label: specTitle(service, 'en'),
+    translations: { ru: specTitle(service, 'ru') },
+    collapsed: true,
+    items: [
+      { label: 'Reference', translations: { ru: 'Справочник' }, link: `/api/${service}/` },
+      ...apiOperations(service, 'en').map((op) => ({
+        label: op.summary ?? op.label,
+        translations: { ru: russian.get(op.anchor) ?? op.summary ?? op.label },
+        link: `/api/${service}/#${op.anchor}`,
+      })),
+    ],
+  };
+});
 
 // The validator cannot resolve these StarlightPage routes (InvalidLinkToCustomPage); other /api/ links stay checked.
 const apiReferenceRoutes = apiServices().flatMap((service) =>

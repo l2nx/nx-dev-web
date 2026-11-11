@@ -21,9 +21,11 @@ maintainers know where it lives.
   `wiki`, `guide`: on a change of their pages on the source trunk) by `scripts/sync-docs.sh` (denylist grep and a portal
   build before the push). `.docs-sources/<section>` holds the sha of the last synced source; a source that is its
   ancestor (rollback, old module tag) is skipped. Never edit these pages here: fix them in the source repo.
-- **API reference is Scalar** (`@scalar/api-reference`, bundled; `src/components/ApiReference.astro`), one wide
+- **API reference is Scalar** (`@scalar/api-reference`, bundled; `src/components/ApiReference.astro`), one
   `StarlightPage` per service and locale (`src/pages/[...locale]/api/[service]/`), plus a static `openapi.json` next to
-  it. `src/lib/openapi-specs.mjs` lists `openapi/*.json`, so a new service appears under `/api/<service>/` and in the
+  it. The portal sidebar is the only menu: Scalar's own sidebar and search are off, and each service's sidebar group
+  lists its operations as `#op-…` anchors (`apiOperations` in `src/lib/openapi-specs.mjs`, shared with the hidden
+  Pagefind index). That module lists `openapi/*.json`, so a new service appears under `/api/<service>/` and in the
   sidebar without a config change; a service without `openapi/ru/<service>.json` shows its English spec on the Russian
   page. Scalar renders in the browser: the page also prints a hidden list of operations for Pagefind. Scalar's AI agent,
   telemetry, developer tools, Try-it and CDN fonts stay off (no external calls).
