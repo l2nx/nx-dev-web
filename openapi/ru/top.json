@@ -1,0 +1,337 @@
+{
+  "components": {
+    "schemas": {
+      "IntegrationVote": {
+        "properties": {
+          "createdAt": {
+            "description": "Когда голос записан",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id голоса (UUIDv7); курсор ленты",
+            "format": "uuid",
+            "type": "string"
+          },
+          "ip": {
+            "description": "IP голосующего; `null`, когда голос старше срока хранения персональных данных",
+            "type": "string"
+          },
+          "ref": {
+            "description": "Непрозрачный `ref` из ссылки для голосования, возвращается как есть",
+            "type": "string"
+          },
+          "serverSlug": {
+            "description": "Slug игрового сервера, который выбрал голосующий, если выбрал",
+            "type": "string"
+          },
+          "tenantSlug": {
+            "description": "Slug тенанта ключа",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "IntegrationVotesResponse": {
+        "properties": {
+          "votes": {
+            "description": "Голоса в порядке id",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationVote"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VoteCreatedWebhook": {
+        "description": "Конверт Standard Webhooks события `vote.created`",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/IntegrationVote",
+            "description": "Голос в том же виде, что в ленте голосов; `ip` заполнен всегда"
+          },
+          "timestamp": {
+            "description": "Когда голос записан",
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "description": "Тип события, всегда `vote.created`",
+            "enum": [
+              "vote.created"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VoteLookupRequest": {
+        "properties": {
+          "refs": {
+            "description": "Искомые refs: 1..500, каждый не пустой и не из одних пробелов, не длиннее 128 символов, без управляющих символов",
+            "items": {
+              "maxLength": 128,
+              "minLength": 0,
+              "pattern": "\\P{Cntrl}*",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "refs"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "platformApiKey": {
+        "bearerFormat": "nx_api_…",
+        "description": "API key тенанта в заголовке `Authorization: Bearer nx_api_...`. Ключ определяет тенант; scopes ключа определяют, какие операции ему доступны.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Голоса за ваш тенант (ваш проект на платформе L2NX) на l2nx.top — для выдачи внутриигровых наград: лента голосов по курсору, поиск по `ref`, который вы передаёте в ссылке для голосования, и webhook `vote.created`.\n\nАутентификация — API key тенанта в заголовке `Authorization: Bearer nx_api_...`; ключу нужен scope `top.votes:read`. Тенант определяется ключом: ни один параметр запроса его не выбирает, и каждый ответ содержит только голоса этого тенанта. Как получить ключ и коды ошибок: [Аутентификация](https://l2nx.dev/ru/api/authentication/).",
+    "title": "nx-top — Integration API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/top/v1/integration/votes": {
+      "get": {
+        "description": "**🔑 Интеграция — API key**\n\nГолоса в порядке id после курсора `after`, без него — с самого старого. Пустой массив `votes` — конец ленты: повторите запрос позже с id последнего полученного голоса. Голоса последних 10 секунд придерживаются, чтобы ни один голос не оказался пропущен за курсором.\n\n**Фильтры:**\n- `after` — Id последнего уже полученного голоса\n",
+        "operationId": "list",
+        "parameters": [
+          {
+            "description": "Id последнего уже полученного голоса",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "Размер страницы, 1..500",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationVotesResponse"
+                }
+              }
+            },
+            "description": "Следующие голоса"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "`VALIDATION_FAILED`: `limit` вне 1..500"
+          },
+          "401": {
+            "description": "Нет заголовка `Authorization: Bearer`, ключ неверного формата или неизвестен"
+          },
+          "403": {
+            "description": "Ключ здесь не допущен; `code` — `API_KEY_REVOKED`, `API_KEY_EXPIRED`, `TENANT_SUSPENDED`, `TENANT_CLOSED` (на общем хосте; на хосте тенанта приостановленный или закрытый тенант получает `404 TENANT_NOT_FOUND`), `API_KEY_TENANT_MISMATCH` (ключ другого тенанта, чем хост) или `INSUFFICIENT_SCOPE`"
+          },
+          "429": {
+            "description": "Слишком много запросов этим ключом к этой операции (`RATE_LIMITED`); лимиты: https://l2nx.dev/ru/api/overview/#rate-limits"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Лента голосов",
+        "tags": [
+          "Интеграция: голоса"
+        ]
+      }
+    },
+    "/top/v1/integration/votes/lookup": {
+      "post": {
+        "description": "**🔑 Интеграция — API key**\n\nВсе голоса с одним из `refs`; ref без голоса просто отсутствует в ответе.",
+        "operationId": "lookup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationVotesResponse"
+                }
+              }
+            },
+            "description": "Найденные голоса в порядке id"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "`VALIDATION_FAILED`: нужно 1..500 refs, каждый не пустой и не из одних пробелов, не длиннее 128 символов, без управляющих символов"
+          },
+          "401": {
+            "description": "Нет заголовка `Authorization: Bearer`, ключ неверного формата или неизвестен"
+          },
+          "403": {
+            "description": "Ключ здесь не допущен; `code` — `API_KEY_REVOKED`, `API_KEY_EXPIRED`, `TENANT_SUSPENDED`, `TENANT_CLOSED` (на общем хосте; на хосте тенанта приостановленный или закрытый тенант получает `404 TENANT_NOT_FOUND`), `API_KEY_TENANT_MISMATCH` (ключ другого тенанта, чем хост) или `INSUFFICIENT_SCOPE`"
+          },
+          "429": {
+            "description": "Слишком много запросов этим ключом к этой операции (`RATE_LIMITED`); лимиты: https://l2nx.dev/ru/api/overview/#rate-limits"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Голоса по ref",
+        "tags": [
+          "Интеграция: голоса"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "platformApiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Боевой сервер",
+      "url": "https://api.l2nx.top"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Голоса тенанта API key — для сверки выданных наград",
+      "name": "Интеграция: голоса"
+    }
+  ],
+  "webhooks": {
+    "vote.created": {
+      "post": {
+        "description": "Отправляется на webhook URL тенанта один раз на каждый голос, вскоре после записи голоса. Проверьте `webhook-signature`, прежде чем доверять телу, и отбрасывайте дубли по `webhook-id`: доставка at-least-once. Ответ не 2xx, редирект или отсутствие ответа за 10 секунд — повтор с растущими интервалами примерно сутки, после чего доставка прекращается; источником для сверки остаётся лента голосов.",
+        "parameters": [
+          {
+            "description": "Id события (UUIDv7), одинаковый при каждом повторе; не `data.id`",
+            "in": "header",
+            "name": "webhook-id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Время отправки этой попытки, секунды epoch; входит в подпись, поэтому устаревшее значение выдаёт повтор запроса (replay)",
+            "in": "header",
+            "name": "webhook-timestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`v1,<base64 HMAC-SHA256>` от `{webhook-id}.{webhook-timestamp}.{body}` на webhook secret тенанта",
+            "in": "header",
+            "name": "webhook-signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteCreatedWebhook"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Любой 2xx подтверждает доставку"
+          }
+        },
+        "security": [],
+        "summary": "Голос записан",
+        "tags": [
+          "Интеграция: webhooks"
+        ]
+      }
+    }
+  }
+}
