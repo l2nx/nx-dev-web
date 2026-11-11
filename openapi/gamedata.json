@@ -277,7 +277,7 @@
                 }
               }
             },
-            "description": "Per-key rate limit exceeded; `Retry-After` says when to retry"
+            "description": "Per-key rate limit exceeded"
           },
           "500": {
             "content": {
@@ -395,7 +395,7 @@
                 }
               }
             },
-            "description": "Per-key rate limit exceeded; `Retry-After` says when to retry"
+            "description": "Per-key rate limit exceeded"
           },
           "500": {
             "content": {
