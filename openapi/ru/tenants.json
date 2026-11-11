@@ -1,0 +1,154 @@
+{
+  "components": {
+    "schemas": {
+      "IntegrationGameServerResponse": {
+        "description": "Игровой сервер тенанта",
+        "properties": {
+          "id": {
+            "description": "Id игрового сервера; передавайте его как `serverId` в другие integration-вызовы (активация промокода)",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lifecycle": {
+            "description": "PRE_LAUNCH — ещё не открыт, OPEN — открыт для игроков, CLOSED — закрыт. Набор значений может расшириться: пропускайте значение, которого не знаете",
+            "enum": [
+              "PRE_LAUNCH",
+              "OPEN",
+              "CLOSED"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "Отображаемое имя игрового сервера",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "PRODUCTION — боевой игровой сервер, TEST — тестовый стенд. Набор значений может расшириться: пропускайте значение, которого не знаете",
+            "enum": [
+              "PRODUCTION",
+              "TEST"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "description": "Slug игрового сервера; передавайте его в заголовке `Server-Slug` других integration-вызовов",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "platformApiKey": {
+        "bearerFormat": "nx_api_…",
+        "description": "API key тенанта в заголовке `Authorization: Bearer nx_api_...`. Ключ определяет тенант; scopes ключа определяют, какие операции ему доступны.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Интеграционный API nx-tenants для сторонних систем. Аутентификация — API key вашего тенанта (тенант — проект на платформе L2NX) в заголовке `Authorization: Bearer nx_api_...` в каждом запросе. Как получить ключ и какие ошибки он даёт — [Аутентификация](https://l2nx.dev/ru/api/authentication/). Для списка игровых серверов нужен scope `tenants.game-servers:read`. Тенант запроса — тот, которому принадлежит API key; ключ, предъявленный на хосте другого тенанта, отклоняется с 403 `API_KEY_TENANT_MISMATCH`. Не передавайте заголовок `Tenant-Slug` сами.",
+    "title": "nx-tenants — Integration API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/tenants/v1/integration/game-servers": {
+      "get": {
+        "description": "Список игровых серверов вашего тенанта: боевые и тестовые, предстартовые, открытые и закрытые, с подключённым адаптером и без. Фильтруйте по `purpose` и `lifecycle` сами и пропускайте значения, которых не знаете. `id` передавайте как `serverId`, а `slug` — как заголовок `Server-Slug` в других вызовах.",
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IntegrationGameServerResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Все игровые серверы тенанта в порядке отображения; пустой массив, если серверов нет"
+          },
+          "401": {
+            "description": "Нет заголовка `Authorization: Bearer`, ключ неверного формата или неизвестен"
+          },
+          "403": {
+            "description": "Ключ здесь не допущен; `code` — `API_KEY_REVOKED`, `API_KEY_EXPIRED`, `TENANT_SUSPENDED`, `TENANT_CLOSED` (на общем хосте; на хосте тенанта приостановленный или закрытый тенант получает `404 TENANT_NOT_FOUND`), `API_KEY_TENANT_MISMATCH` (ключ другого тенанта, чем хост) или `INSUFFICIENT_SCOPE`"
+          },
+          "404": {
+            "description": "На хосте тенанта: тенант неизвестен, приостановлен или закрыт (`TENANT_NOT_FOUND`)"
+          },
+          "429": {
+            "description": "Слишком много запросов этим ключом к этой операции (`RATE_LIMITED`); лимиты: https://l2nx.dev/ru/api/overview/#rate-limits"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Справочник тенантов ещё не загружен (`TENANT_DIRECTORY_UNAVAILABLE`); повторите запрос через `Retry-After` секунд"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "Список игровых серверов вашего тенанта",
+        "tags": [
+          "Игровые серверы — интеграция"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "platformApiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Боевой шлюз (хост тенанта)",
+      "url": "https://{tenant}.api.l2nx.app",
+      "variables": {
+        "tenant": {
+          "default": "your-tenant",
+          "description": "Slug тенанта: префикс вашего хоста API"
+        }
+      }
+    }
+  ]
+}

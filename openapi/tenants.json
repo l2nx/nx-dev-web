@@ -1,0 +1,154 @@
+{
+  "components": {
+    "schemas": {
+      "IntegrationGameServerResponse": {
+        "description": "Game server of the tenant",
+        "properties": {
+          "id": {
+            "description": "Game server id; pass it as `serverId` to other integration calls (promo redeem)",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lifecycle": {
+            "description": "PRE_LAUNCH — not open yet, OPEN — open to players, CLOSED — closed. The set may grow: skip a value you do not know",
+            "enum": [
+              "PRE_LAUNCH",
+              "OPEN",
+              "CLOSED"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name of the game server",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "PRODUCTION — a live game server, TEST — a test stand. The set may grow: skip a value you do not know",
+            "enum": [
+              "PRODUCTION",
+              "TEST"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "description": "Game server slug; send it as the `Server-Slug` header of other integration calls",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "platformApiKey": {
+        "bearerFormat": "nx_api_…",
+        "description": "API key of the tenant, sent as `Authorization: Bearer nx_api_...`. The key determines the tenant; the scopes granted to it determine which operations it may call.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Third-party integration surface of nx-tenants. Authenticate every request with the API key of your tenant (your project on the L2NX platform): `Authorization: Bearer nx_api_...`. How to get a key and which errors it can produce: [Authentication](https://l2nx.dev/api/authentication/). The game server list needs scope `tenants.game-servers:read`. The tenant is the one the API key belongs to; a key used on another tenant's host is rejected with 403 `API_KEY_TENANT_MISMATCH`. Do NOT send a `Tenant-Slug` header yourself.",
+    "title": "nx-tenants — Integration API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/tenants/v1/integration/game-servers": {
+      "get": {
+        "description": "List the game servers of your tenant: production and test, pre-launch, open and closed, whether or not their adapter is connected. Filter by `purpose` and `lifecycle` yourself and skip values you do not know. Use `id` as `serverId` and `slug` as the `Server-Slug` header in other calls.",
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IntegrationGameServerResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Every game server of the tenant in display order; an empty array when it has none"
+          },
+          "401": {
+            "description": "No `Authorization: Bearer` header, a malformed key or an unknown key"
+          },
+          "403": {
+            "description": "The key is not allowed here; `code` is `API_KEY_REVOKED`, `API_KEY_EXPIRED`, `TENANT_SUSPENDED`, `TENANT_CLOSED` (on a shared host; on a tenant host a suspended or closed tenant gets `404 TENANT_NOT_FOUND`), `API_KEY_TENANT_MISMATCH` (a key of another tenant than the host) or `INSUFFICIENT_SCOPE`"
+          },
+          "404": {
+            "description": "On a tenant host: the tenant is unknown, suspended or closed (`TENANT_NOT_FOUND`)"
+          },
+          "429": {
+            "description": "Too many requests with this key to this operation (`RATE_LIMITED`); limits: https://l2nx.dev/api/overview/#rate-limits"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "The tenant directory is not loaded yet (`TENANT_DIRECTORY_UNAVAILABLE`); retry after `Retry-After` seconds"
+          }
+        },
+        "security": [
+          {
+            "platformApiKey": []
+          }
+        ],
+        "summary": "List the game servers of your tenant",
+        "tags": [
+          "Game servers — integration"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "platformApiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Production gateway (per-tenant host)",
+      "url": "https://{tenant}.api.l2nx.app",
+      "variables": {
+        "tenant": {
+          "default": "your-tenant",
+          "description": "Tenant slug: your dedicated API host prefix"
+        }
+      }
+    }
+  ]
+}
