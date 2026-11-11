@@ -9,11 +9,19 @@ export const API_LOCALES = [
   { locale: 'ru', lang: 'ru' },
 ];
 
+// Tenants first: its server list yields the serverId / Server-Slug the other services take. The rest alphabetical.
+const SERVICE_ORDER = ['tenants'];
+
+const rank = (service) => {
+  const index = SERVICE_ORDER.indexOf(service);
+  return index < 0 ? SERVICE_ORDER.length : index;
+};
+
 export function apiServices() {
   return readdirSync(openApiDir)
     .filter((file) => file.endsWith('.json'))
-    .sort()
-    .map((file) => file.slice(0, -'.json'.length));
+    .map((file) => file.slice(0, -'.json'.length))
+    .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
 
 export function specFile(service, lang) {

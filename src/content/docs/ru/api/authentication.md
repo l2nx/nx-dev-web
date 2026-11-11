@@ -36,6 +36,7 @@ nx_api_<30 random characters><6 checksum characters>
 
 | Scope                          | Что даёт                                        |
 | ------------------------------ | ----------------------------------------------- |
+| `tenants.game-servers:read`    | Игровые серверы вашего тенанта                  |
 | `top.votes:read`               | Лента голосов l2nx.top и поиск голосов по `ref` |
 | `gamedata.item-templates:read` | Шаблоны предметов ваших игровых серверов        |
 | `gameservers.promo:redeem`     | Активация промокодов для игроков                |

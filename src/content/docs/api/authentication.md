@@ -37,6 +37,7 @@ A key carries a set of scopes; each endpoint requires one. Scope names follow `<
 
 | Scope                          | Grants                                      |
 | ------------------------------ | ------------------------------------------- |
+| `tenants.game-servers:read`    | Game servers of your tenant                 |
 | `top.votes:read`               | l2nx.top vote feed and vote lookup by `ref` |
 | `gamedata.item-templates:read` | Item templates of your game servers         |
 | `gameservers.promo:redeem`     | Redeeming promo codes for players           |

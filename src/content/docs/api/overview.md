@@ -1,7 +1,6 @@
 ---
 title: Overview
-description:
-  "The L2NX integration API for your site and tools: hosts, paths, versioning, pagination, errors and rate limits."
+description: "The L2NX integration API for your site and tools: hosts, paths, versioning, pagination, errors and rate limits."
 ---
 
 The integration API is the HTTP API that your site, panel or bot calls server to server. Every request is made on behalf
@@ -9,11 +8,12 @@ of your tenant — your project on the L2NX platform — with its [API key](/api
 
 ## What is available
 
-| Service   | What you can do                                               | Scope                          | Reference                                                                 |
-| --------- | ------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
-| l2nx.top  | Read the vote feed, look votes up by `ref`                    | `top.votes:read`               | [page](/api/top/) · [OpenAPI JSON](/api/top/openapi.json)                 |
-| Game data | Read item templates of your game servers                      | `gamedata.item-templates:read` | [page](/api/gamedata/) · [OpenAPI JSON](/api/gamedata/openapi.json)       |
-| Promo     | Redeem promo codes for players, for example from a user panel | `gameservers.promo:redeem`     | [page](/api/gameservers/) · [OpenAPI JSON](/api/gameservers/openapi.json) |
+| Service      | What you can do                                                                     | Scope                          | Reference                                                                 |
+| ------------ | ----------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
+| Game servers | List the game servers of your tenant: `id` for `serverId`, `slug` for `Server-Slug` | `tenants.game-servers:read`    | [page](/api/tenants/) · [OpenAPI JSON](/api/tenants/openapi.json)         |
+| l2nx.top     | Read the vote feed, look votes up by `ref`                                          | `top.votes:read`               | [page](/api/top/) · [OpenAPI JSON](/api/top/openapi.json)                 |
+| Game data    | Read item templates of your game servers                                            | `gamedata.item-templates:read` | [page](/api/gamedata/) · [OpenAPI JSON](/api/gamedata/openapi.json)       |
+| Promo        | Redeem promo codes for players, for example from a user panel                       | `gameservers.promo:redeem`     | [page](/api/gameservers/) · [OpenAPI JSON](/api/gameservers/openapi.json) |
 
 Reference pages for each service are generated from its OpenAPI description and listed under **Integration API** in the
 sidebar. They are updated automatically with every release of the service. The OpenAPI 3.1 document of a service can be
