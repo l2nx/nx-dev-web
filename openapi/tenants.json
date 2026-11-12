@@ -5,7 +5,7 @@
         "description": "Game server of the tenant",
         "properties": {
           "id": {
-            "description": "Game server id; pass it as `serverId` to other integration calls (promo redeem)",
+            "description": "Game server id",
             "format": "uuid",
             "type": "string"
           },
@@ -83,7 +83,7 @@
   "paths": {
     "/tenants/v1/integration/game-servers": {
       "get": {
-        "description": "List the game servers of your tenant: production and test, pre-launch, open and closed, whether or not their adapter is connected. Filter by `purpose` and `lifecycle` yourself and skip values you do not know. Use `id` as `serverId` and `slug` as the `Server-Slug` header in other calls.",
+        "description": "List the game servers of your tenant: production and test, pre-launch, open and closed, whether or not their adapter is connected. Filter by `purpose` and `lifecycle` yourself and skip values you do not know. Send `slug` as the `Server-Slug` header of other integration calls.",
         "operationId": "list",
         "responses": {
           "200": {
