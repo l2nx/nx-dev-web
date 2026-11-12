@@ -169,7 +169,7 @@
                 }
               }
             },
-            "description": "Malformed or invalid request body (on a validation failure `fields` lists the offending fields), or the `Server-Slug` header is missing (`SERVER_SLUG_REQUIRED`)"
+            "description": "Malformed or invalid request body (on a validation failure `fields` lists the offending fields)\n\nThe `Server-Slug` header is missing (`SERVER_SLUG_REQUIRED`)"
           },
           "401": {
             "description": "No `Authorization: Bearer` header, a malformed key or an unknown key"
