@@ -97,19 +97,13 @@
             "minLength": 1,
             "type": "string"
           },
-          "serverId": {
-            "description": "Id игрового сервера, на котором активируется промокод",
-            "format": "uuid",
-            "type": "string"
-          },
           "userId": {
             "description": "Id пользователя в вашем личном кабинете, сохраняется вместе с активацией; необязательный",
             "type": "string"
           }
         },
         "required": [
-          "code",
-          "serverId"
+          "code"
         ],
         "type": "object"
       }
@@ -134,6 +128,18 @@
       "post": {
         "description": "Активирует промокод для указанного персонажа от имени личного кабинета. Аутентификация — API key тенанта в заголовке `Authorization: Bearer nx_api_...`.\n\nHTTP 200 возвращается при любом бизнес-исходе — смотрите `outcome` (SUCCESS / INVALID_CODE / ALREADY_REDEEMED / GROUP_ALREADY_USED / CHARACTER_NOT_FOUND).\n\nHTTP 503 означает, что награда не выдана и промокод не израсходован, — повторите запрос через `Retry-After` секунд.",
         "operationId": "redeem",
+        "parameters": [
+          {
+            "description": "Slug игрового сервера, с которым работает операция",
+            "example": "your-server",
+            "in": "header",
+            "name": "Server-Slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -163,7 +169,7 @@
                 }
               }
             },
-            "description": "Тело запроса не разобрано или не прошло проверку; при ошибке проверки `fields` перечисляет неверные поля"
+            "description": "Тело запроса не разобрано или не прошло проверку (при ошибке проверки `fields` перечисляет неверные поля), или нет заголовка `Server-Slug` (`SERVER_SLUG_REQUIRED`)"
           },
           "401": {
             "description": "Нет заголовка `Authorization: Bearer`, ключ неверного формата или неизвестен"
@@ -172,7 +178,7 @@
             "description": "Ключ здесь не допущен; `code` — `API_KEY_REVOKED`, `API_KEY_EXPIRED`, `TENANT_SUSPENDED`, `TENANT_CLOSED` (на общем хосте; на хосте тенанта приостановленный или закрытый тенант получает `404 TENANT_NOT_FOUND`), `API_KEY_TENANT_MISMATCH` (ключ другого тенанта, чем хост) или `INSUFFICIENT_SCOPE`"
           },
           "404": {
-            "description": "На хосте тенанта: тенант неизвестен, приостановлен или закрыт (`TENANT_NOT_FOUND`)"
+            "description": "На хосте тенанта: тенант неизвестен, приостановлен или закрыт (`TENANT_NOT_FOUND`)\n\nИгровой сервер не найден или скрыт (`SERVER_NOT_FOUND`)"
           },
           "429": {
             "description": "Слишком много запросов этим ключом к этой операции (`RATE_LIMITED`); лимиты: https://l2nx.dev/ru/api/overview/#rate-limits"

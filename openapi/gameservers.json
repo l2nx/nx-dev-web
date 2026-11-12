@@ -97,19 +97,13 @@
             "minLength": 1,
             "type": "string"
           },
-          "serverId": {
-            "description": "Id of the game server the code is redeemed on",
-            "format": "uuid",
-            "type": "string"
-          },
           "userId": {
             "description": "Id of the user in your user panel, stored with the redemption; optional",
             "type": "string"
           }
         },
         "required": [
-          "code",
-          "serverId"
+          "code"
         ],
         "type": "object"
       }
@@ -134,6 +128,18 @@
       "post": {
         "description": "Activates a promo code for the given character on behalf of the user panel. Authenticate with your tenant API key as `Authorization: Bearer nx_api_...`.\n\nHTTP 200 is returned for any business outcome — read `outcome` (SUCCESS / INVALID_CODE / ALREADY_REDEEMED / GROUP_ALREADY_USED / CHARACTER_NOT_FOUND).\n\nHTTP 503 means no reward was delivered and the code was not spent — retry after `Retry-After` seconds.",
         "operationId": "redeem",
+        "parameters": [
+          {
+            "description": "Game server slug: the server this operation works on",
+            "example": "your-server",
+            "in": "header",
+            "name": "Server-Slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -163,7 +169,7 @@
                 }
               }
             },
-            "description": "Malformed or invalid request body; on a validation failure `fields` lists the offending fields"
+            "description": "Malformed or invalid request body (on a validation failure `fields` lists the offending fields), or the `Server-Slug` header is missing (`SERVER_SLUG_REQUIRED`)"
           },
           "401": {
             "description": "No `Authorization: Bearer` header, a malformed key or an unknown key"
@@ -172,7 +178,7 @@
             "description": "The key is not allowed here; `code` is `API_KEY_REVOKED`, `API_KEY_EXPIRED`, `TENANT_SUSPENDED`, `TENANT_CLOSED` (on a shared host; on a tenant host a suspended or closed tenant gets `404 TENANT_NOT_FOUND`), `API_KEY_TENANT_MISMATCH` (a key of another tenant than the host) or `INSUFFICIENT_SCOPE`"
           },
           "404": {
-            "description": "On a tenant host: the tenant is unknown, suspended or closed (`TENANT_NOT_FOUND`)"
+            "description": "On a tenant host: the tenant is unknown, suspended or closed (`TENANT_NOT_FOUND`)\n\nUnknown or hidden game server (`SERVER_NOT_FOUND`)"
           },
           "429": {
             "description": "Too many requests with this key to this operation (`RATE_LIMITED`); limits: https://l2nx.dev/api/overview/#rate-limits"
