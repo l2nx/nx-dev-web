@@ -14,6 +14,19 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.128.0, nx-gs-adapter-core 0.56.0: platform announcements through `SendChatMessageCommand`
+
+Up to core 0.55.1 every `OwnerVerified` command needed a `user` initiator, so a chat message the platform sends on its
+own behalf (a scheduled announcement, no `senderCharacterId`) was refused with `VALIDATION_FAILED`
+(`invalid-initiator`) and never reached the game chat.
+
+- `OwnerVerified` gets the default method `ownerScoped()`: `true` when the command acts for a player's character.
+  Only such a command needs `source = user`, and its `initiator.getUserId()` stays the owner, as before.
+- `SendChatMessageCommand.ownerScoped()` is `true` only with a `senderCharacterId`. Without one the initiator may be a
+  platform service, and `getInitiator().getUserId()` is `null`.
+- What to do: take the two modules together. A chat handler that reads `getUserId()` for an announcement (audit, rate
+  limits) handles `null`. Every other `OwnerVerified` command is unchanged.
+
 ## nx-gs-adapter-api 0.127.0, nx-gs-adapter-core 0.55.0, nx-gs-gd-sync-core 0.17.0: Kafka header names without `Nx-`
 
 The adapter now sends and reads Kafka headers without the `Nx-` prefix. Take the three modules together.
@@ -144,7 +157,7 @@ now, independent of `privateStoreSellSlots`. A provider computes it from the sam
   (`source` is `user` or the sending platform service; `userId` is set exactly for a user; optional `label`, `email`,
   `ip`). `NxCommand` has `getInitiator()`, and every command constructor and builder takes it. The core refuses a
   command without a valid initiator with `VALIDATION_FAILED` before your handler runs, and an `OwnerVerified` command
-  also needs a user source, so a handler reads a valid initiator and never re-checks it. Its `ip` has already passed
+  also needs a user source (from core 0.56.0 only an owner-scoped one, see above), so a handler reads a valid initiator and never re-checks it. Its `ip` has already passed
   `ClientIdentifiers`. Code that builds commands itself (tests, tools) passes an initiator.
 - **Removed `masterAccountId` and `initiatorIp`** from `StartOfflineFishingCommand`, `StopOfflineFishingCommand`,
   `ReviveCharacterCommand` and the private store start commands (`StartPrivateStoreCommand`), with no deprecated

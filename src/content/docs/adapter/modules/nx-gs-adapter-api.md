@@ -95,7 +95,10 @@ answer differently.
 
 Every command carries `initiator` (`CommandInitiator`): who triggered it, with the platform user, an optional label,
 email and request IP. The core validates it before the handler runs; host rules read the master account from
-`initiator.getUserId()` and the request IP from `initiator.getIp()`.
+`initiator.getUserId()` and the request IP from `initiator.getIp()`. An `OwnerVerified` command that acts for a
+player's character (`ownerScoped()`, `true` by default) needs a `user` initiator; `SendChatMessageCommand` is
+owner-scoped only with a `senderCharacterId`, so an announcement may come from a platform service with a `null`
+`getUserId()`.
 
 ## Reviving a dead character
 
