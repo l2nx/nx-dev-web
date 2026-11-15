@@ -14,6 +14,20 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.129.1: ban expiry in `BanResult`, a repeated ban extends
+
+- `BanResult` gets `bans`: the `banIds` rows in the same order, each a `BanRecord` `{id, expiresAt}` with the expiry
+  the row carries after the command (`expiresAt` `null` = permanent). The platform reads a missing `bans` as "expiry
+  not reported".
+- **Breaking (source).** The `BanResult` constructor takes `bans` as a new second parameter; the constructor rejects a
+  list whose ids differ from `banIds` and a `banIds` list holding `null`. Code that builds `BanResult` through the builder compiles unchanged.
+- New host rule for `BanCommand`: when an active ban of the same target and `banType` exists, extend it to the new term
+  and return its id if the new term ends later or is permanent, otherwise return it as is. A term is never shortened;
+  only without an active ban does the host create a new row. A repeated command with the same `expiresAt` is then
+  idempotent without a key.
+- What to do: the ban handler applies the rule above and fills `bans` for every returned row with its effective
+  expiry.
+
 ## nx-gs-adapter-api 0.128.0, nx-gs-adapter-core 0.56.0: platform announcements through `SendChatMessageCommand`
 
 Up to core 0.55.1 every `OwnerVerified` command needed a `user` initiator, so a chat message the platform sends on its
