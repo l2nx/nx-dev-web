@@ -39,6 +39,7 @@ one-letter `o` still counts as the beginning of a word.
 | `57`             | the entry with id 57 **and** entries with a word starting with "57"          |
 | `#57`            | only the entry with id 57                                                    |
 | a long id (UUID) | for entries identified by a UUID: that entry and text matches, like a number |
+| `#<uuid>`        | only the entry with this UUID, like `#57`                                    |
 | anything else    | is searched literally                                                        |
 
 Examples:
@@ -55,6 +56,14 @@ Examples:
   inside names, so it needs 3 characters: `+50` works, `+5` alone may find nothing.
 
 A query of exclusions only (`-sword`) has nothing to search for and is refused like a too short one.
+
+## Matches through a related entry
+
+Some lists also find a row through an entry related to it: for example, a list of support tickets can find a ticket by
+the email or username of its author. The row and the related entry are searched as separate texts, so the query has to
+match one of them as a whole: words of the query are never split between the row and its related entry. A query that
+is only an id (`57`, `#57`, `#<uuid>`) matches the row's own id and, where the product says so, the exact id of the
+related entry. The product page lists which related entries a list searches.
 
 ## Typos
 
