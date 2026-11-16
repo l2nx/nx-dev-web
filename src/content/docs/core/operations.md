@@ -37,7 +37,7 @@ server and 20 on the game server (`spring.datasource.hikari.maximum-pool-size`).
 development only: set your own before the database is reachable from anywhere else.
 
 The login server listens on one port per client protocol variant (`l2nx.login.client.ports`, a list of
-`{port, variant}`; the shipped one is `2106` for `c621`, High Five clients). Its blocking work (decrypting the
+`{port, variant}`; the shipped one is `2106` for `c621`, High Five clients; port `0` binds a free port and logs it). Its blocking work (decrypting the
 credentials, the account lookup, the password check) runs at most `l2nx.login.client.max-concurrent-tasks` tasks at
 once across all connections (default `32`); the others wait their turn.
 
