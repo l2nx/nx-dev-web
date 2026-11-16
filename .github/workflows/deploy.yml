@@ -18,7 +18,7 @@ env:
 
 jobs:
   build-push:
-    runs-on: [self-hosted, linux, nexus]
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.ver.outputs.value }}
     steps:
@@ -59,16 +59,13 @@ jobs:
         if: always() && steps.npmrc.outputs.path != ''
         run: rm -f "${{ steps.npmrc.outputs.path }}"
 
-      - name: Prune old images on runner
-        run: docker image prune -f --filter "until=168h"
-
       - name: Logout from registry
         if: always()
         run: docker logout ${{ secrets.DOCKER_REGISTRY_PUSH }}
 
   deploy:
     needs: build-push
-    runs-on: [self-hosted, linux, nexus]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,13 +73,17 @@ jobs:
           token: ${{ secrets.NX_INFRA_PAT }}
           fetch-depth: 0
 
-      - name: Verify tooling
-        run: python3 -c "import ruamel.yaml; print(ruamel.yaml.__version__)"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      - name: Install tooling
+        run: python -m pip install ruamel.yaml
 
       - name: Bump image tag in compose
         env:
           VERSION: ${{ needs.build-push.outputs.version }}
-        run: python3 .github/scripts/bump-image.py "${{ env.DEPLOY_ENV }}" "${{ env.APP_NAME }}" "$VERSION"
+        run: python .github/scripts/bump-image.py "${{ env.DEPLOY_ENV }}" "${{ env.APP_NAME }}" "$VERSION"
 
       - name: Commit and push
         env:
@@ -107,7 +108,7 @@ jobs:
   notify:
     needs: [build-push, deploy]
     if: always()
-    runs-on: [self-hosted, linux, nexus]
+    runs-on: ubuntu-latest
     steps:
       - name: Notify DEPLOYS topic
         env:
