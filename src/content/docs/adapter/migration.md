@@ -14,6 +14,30 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.131.0, db-sync 0.14.0, runtime-sync 0.7.0: full ban rows in `BanResult` and `UnbanResult`, read-time `SyncEvent` timestamps
+
+- **Breaking (wire and source).** `BanResult.banIds` is gone. `BanResult.bans` is required, never empty, and lists every
+  ban row the host created, extended or found, the shadow chat ban included; each `BanRecord` is `{source, row}`:
+  `source` is a `String` token of the `BanSource` vocabulary (`STANDARD`: `row.id` is the host ban table row id, as on
+  the `ban` sync entity; `SHADOW`: `row.id` is the char id, as on the `shadowban` sync entity) and `row` is the
+  `BanDbDto` as it stands after the command, the same shape the ban sync stream carries. `BanRecord.id` and
+  `BanRecord.expiresAt` are gone: the expiry is `row.expiresAt`.
+- **Breaking (wire and source).** `UnbanResult.removedBanIds` and `UnbanResult.removed` are gone.
+  `UnbanResult.removedBans` is required and lists the cleared rows as `BanRef` `{source, id}`, `source` a `String`
+  token in the same id spaces; empty when nothing matched (the no-op success that `removed = false` used to report).
+- `source` is a string so a consumer keeps the whole result when a later host sends a token it does not know yet:
+  `BanSource.fromToken` reads such a token as `null`. The builders also take the `BanSource` constant.
+- Both results get the required `observedAt`: the host time the change was applied. The platform orders the reply
+  against the ban sync stream by it, so take it from the host clock right after the change, not from the command.
+- The constructors reject a missing `bans` / `removedBans` / `observedAt`, an empty `bans`, a list holding `null` and a
+  missing or blank `source`.
+- Take nx-gs-db-sync-core 0.14.0 and nx-gs-runtime-sync-core 0.7.0 with it: their `SyncEvent.timestampEpochMs` is now
+  the host-clock instant the row was read, not the publish time, so the platform can order sync events against
+  `observedAt`. The wire form is unchanged and the host changes nothing for them.
+- What to do: the ban and unban handlers return every affected row with its source, the shadow chat ban included, and
+  stamp `observedAt`. A host on an older build keeps working: the platform reads its replies in the old form until it
+  is restarted on the new one.
+
 ## nx-gs-adapter-api 0.129.1: ban expiry in `BanResult`, a repeated ban extends
 
 - `BanResult` gets `bans`: the `banIds` rows in the same order, each a `BanRecord` `{id, expiresAt}` with the expiry
