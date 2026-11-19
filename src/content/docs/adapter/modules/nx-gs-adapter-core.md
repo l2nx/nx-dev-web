@@ -30,7 +30,8 @@ Always. It brings `nx-gs-adapter-api`, `nx-gs-kafka` and `nx-gs-commons` transit
   [`nx-gs-db-migrator-liquibase5`](/adapter/modules/nx-gs-db-migrator-liquibase5/)).
 - Discovers modules (`AdapterModule`) through `ServiceLoader` after the connect and starts them.
 - Publishes the events the host sends through the adapter, from one bounded queue.
-- Delivers platform commands to the handlers the host registers and sends back their results.
+- Delivers platform commands to the handlers the host registers and sends back their results. A command type is
+  registered once: a second registration of a taken type throws.
 - Runs a shared IO pool for blocking work of modules and handlers, so that work never runs on the game thread.
 - Runs app sessions when the host provides an `OfflineSessionHost`. It keeps the platform's view of them true: it
   publishes the ids of every open session every 60 seconds and republishes a session end until the platform has

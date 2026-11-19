@@ -14,6 +14,23 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-core 0.57.0, nx-gs-adapter-api 0.132.0: a command type is registered once
+
+- **Breaking (behaviour).** `NxCommands.on(...)` throws `IllegalStateException` when the command's simple name is
+  already registered: the same class registered twice, or two classes with the same simple name. Before, the last
+  registration silently replaced the first. The exception reaches the module's `onConnect`, so the module goes
+  `FAILED` unless it catches it. A module that goes `FAILED` in `onConnect` or `start` loses every command handler it
+  registered. The fallback `ctx.commands()` of a context without a commands runtime (api 0.132.0) refuses a taken type
+  the same way.
+- Commands are polled only after every module has connected and started, so a command waiting in the topic is never
+  answered as unsupported while handlers are still being registered.
+- A host's own command classes, outside the platform catalog, carry a prefix specific to the host in their simple
+  name, so they never take the name of a platform command, present or future.
+- The commands consumer group is now derived from the commands topic the platform issues. A game server keeps the
+  group it had, so its committed position carries over; nothing to do.
+- What to do: register each command class once, and rename an own command class whose simple name matches a platform
+  command or lacks the host prefix. A host that registers each type once changes nothing.
+
 ## nx-gs-adapter-api 0.131.0, db-sync 0.14.0, runtime-sync 0.7.0: full ban rows in `BanResult` and `UnbanResult`, read-time `SyncEvent` timestamps
 
 - **Breaking (wire and source).** `BanResult.banIds` is gone. `BanResult.bans` is required, never empty, and lists every
@@ -27,7 +44,8 @@ here are drop-in: bump the version and restart.
   token in the same id spaces; empty when nothing matched (the no-op success that `removed = false` used to report).
 - `source` is a string so a consumer keeps the whole result when a later host sends a token it does not know yet:
   `BanSource.fromToken` reads such a token as `null`. The builders also take the `BanSource` constant.
-- Both results get the required `observedAt`: the host time the change was applied. The platform orders the reply
+- Both results get the required `observedAt`: the host time the rows were observed, after the change was applied (for
+  a no-op, when the host found them). The platform orders the reply
   against the ban sync stream by it, so take it from the host clock right after the change, not from the command.
 - The constructors reject a missing `bans` / `removedBans` / `observedAt`, an empty `bans`, a list holding `null` and a
   missing or blank `source`.

@@ -67,6 +67,11 @@ constructor). At connect a module receives a `ConnectContext` with the adapter's
 triggers, game data and the IO pool. A host that publishes events or handles platform commands does it from its own
 `AdapterModule`. A module that throws goes `FAILED`; the other modules keep running.
 
+A command handler is bound by the simple name of its command class, once per connect: registering a name that is
+already taken (the same class again, or another class with the same simple name) throws `IllegalStateException`, so
+the registering module goes `FAILED`. A host's own command classes carry a prefix specific to the host in their simple
+name, so they never take the name of a platform command, present or future.
+
 ## App sessions and app settings
 
 `OfflineSessionHost` carries only the world side of an app session (place, restore and remove the character). The
