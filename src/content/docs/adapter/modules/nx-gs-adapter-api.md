@@ -96,7 +96,8 @@ checks (one open session per character, a free spot) and answers an `AppSessionC
 `CHARACTER_BUSY` with the open session, `SPOT_TAKEN`, `UNAVAILABLE`) without writing anything, taking a spot or
 calling `OfflineSessionHost`. It backs the check commands (`CheckOfflineFishingCommand`): the host runs its start
 steps up to the first side effect and calls `check` where the start calls `start`, so a check and a start never
-answer differently.
+answer differently. The command's `AppSessionCheckResult` may carry the character's current activity `usage` row, on
+an allowed and on a refused check, once the host has found the character.
 
 Every command carries `initiator` (`CommandInitiator`): who triggered it, with the platform user, an optional label,
 email and request IP. The core validates it before the handler runs; host rules read the master account from
