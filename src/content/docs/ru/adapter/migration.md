@@ -14,6 +14,16 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.134.0, db-sync 0.15.1: `publicReason`
+
+- `BanCommand` и `BanDbDto` получают `publicReason` — причину бана, которую видит игрок. `reason` помечено `@Deprecated`
+  и ещё работает; его уберёт следующий релиз вместе с `target*`.
+- На wire уходят оба имени: читатель берёт `publicReason`, иначе `reason`; сеттер билдера любого имени пишет оба. Хост и
+  платформа любой версии понимают друг друга.
+- **Ломает исходники и бинарную совместимость.** Конструкторы для JSON у обоих классов получили ещё один аргумент.
+  Стройте объекты через `builder()`.
+- Что сделать: перейти на `getPublicReason()` и `publicReason(...)`.
+
 ## nx-gs-adapter-api 0.133.0, db-sync 0.15.0: субъект бана (`subject*`), `unbannedBans`, бан входа по IP или HWID отключает
 
 - **Новые поля.** `BanCommand`, `UnbanCommand` и `BanDbDto` получили `subjectType` / `subjectValue` (`BanDbDto` — ещё

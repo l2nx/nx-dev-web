@@ -14,6 +14,16 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.134.0, db-sync 0.15.1: `publicReason`
+
+- `BanCommand` and `BanDbDto` get `publicReason`: the ban reason a player sees. `reason` is `@Deprecated` and still
+  works; a later release removes it together with `target*`.
+- Both names travel on the wire: a reader takes `publicReason`, otherwise `reason`; a builder setter of either name
+  writes both. A host and a platform of either version understand each other.
+- **Breaking (source and binary).** The JSON-binding constructors of both classes take one more argument. Build them
+  through `builder()`.
+- What to do: move to `getPublicReason()` and `publicReason(...)`.
+
 ## nx-gs-adapter-api 0.133.0, db-sync 0.15.0: ban subjects (`subject*`), `unbannedBans`, a login ban by IP or HWID kicks
 
 - **New fields.** `BanCommand`, `UnbanCommand` and `BanDbDto` get `subjectType` / `subjectValue` (`BanDbDto` also
