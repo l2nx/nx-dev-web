@@ -14,6 +14,28 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.133.0, db-sync 0.15.0: ban subjects (`subject*`), `unbannedBans`, a login ban by IP or HWID kicks
+
+- **New fields.** `BanCommand`, `UnbanCommand` and `BanDbDto` get `subjectType` / `subjectValue` (`BanDbDto` also
+  `subjectName`) with the vocabulary `WellKnownBanSubjectTypes`: `CHARACTER`, `ACCOUNT`, `IP`, `HWID`. `UnbanResult` gets
+  `unbannedBans`. `targetType` / `targetValue` / `targetName`, `removedBans`, `WellKnownBanTargetTypes` and its `HARD` are
+  `@Deprecated` and still work; a later release removes them and gets its own section here.
+- Both names travel on the wire. A reader takes one pair as a whole: `subject*` when `subjectType` is set, otherwise
+  `target*`; the same goes for `unbannedBans` and `removedBans`. A getter of either name answers from that pair, and a
+  builder setter of either name writes both, so a host on an older build and a platform of either version understand
+  each other.
+- **Breaking (source and binary).** The positional constructors of `BanCommand`, `UnbanCommand`, `UnbanResult` and
+  `BanDbDto` with only the former fields are gone; the one constructor left takes the fields of both names and is meant
+  for JSON binding. Build all four through `builder()`.
+- **New host rule.** A `GAME_LOGIN` ban whose subject is `IP` or `HWID` disconnects every player connected with that
+  value, in addition to refusing the next login. A character in the world without a client (an offline trader) is
+  reached by its own `CHARACTER` or `ACCOUNT` ban. A host that does not follow the rule yet enforces such a ban from the next
+  login.
+- `HARD` stays accepted: a handler keeps expanding it into character, account, IP and HWID bans until it is removed.
+- What to do: replace positional constructor calls with the builders, move to the `subject*` names and `unbannedBans`,
+  and make the ban handler follow the rule above. Take nx-gs-db-sync-core 0.15.0 with the api: it nulls placeholder IP
+  and HWID values under both names.
+
 ## nx-gs-adapter-core 0.57.0, nx-gs-adapter-api 0.132.0: a command type is registered once
 
 - **Breaking (behaviour).** `NxCommands.on(...)` throws `IllegalStateException` when the command's simple name is
