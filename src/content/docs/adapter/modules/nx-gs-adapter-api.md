@@ -57,7 +57,8 @@ life stone with the groups it accepts and the probability of every option per sl
 probabilities with its own roll code; the platform stores them as they are.
 
 `GameSettingsProvider` gives the engine configuration as the engine applies it (enchant caps, attribute limits, mail
-fees, the offline private store fee), so the platform shows the server's rules to the player. The adapter calls it
+fees, the offline private store fee, the fishing limits), so the platform shows the server's rules to the player. The
+fishing limits are the exception: they serve staff diagnostics and are never shown to players. The adapter calls it
 from its IO threads on connect and every 5 minutes; the provider builds the snapshot from the live configuration on
 every call, so a reloaded configuration reaches the platform within one period. `null` means the host is not ready
 yet; a call that throws is logged once per failure streak and retried on the next period.
@@ -97,7 +98,9 @@ checks (one open session per character, a free spot) and answers an `AppSessionC
 calling `OfflineSessionHost`. It backs the check commands (`CheckOfflineFishingCommand`): the host runs its start
 steps up to the first side effect and calls `check` where the start calls `start`, so a check and a start never
 answer differently. The command's `AppSessionCheckResult` may carry the character's current activity `usage` row, on
-an allowed and on a refused check, once the host has found the character.
+an allowed and on a refused check, once the host has found the character. An `ALREADY_ACTIVE` refusal of a start or a
+check may name the character that holds the slot (`blockedByCharacterId`, every scope but `CHARACTER`) for staff
+diagnostics; players never see it.
 
 Every command carries `initiator` (`CommandInitiator`): who triggered it, with the platform user, an optional label,
 email and request IP. The core validates it before the handler runs; host rules read the master account from

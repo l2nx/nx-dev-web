@@ -14,6 +14,13 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.137.1: `blockedByCharacterId`, the `fishing` settings group
+
+- `AppSessionCheckResult` and the extensions of a refused app-session command get `blockedByCharacterId`: the character
+  that holds the slot. `GameSettings` gets the nullable `fishing` group with the effective fishing limits.
+- **Breaking (source and binary).** The constructors of `AppSessionCheckResult` and `GameSettings` take one more
+  argument. Build them through `builder()`.
+
 ## nx-gs-adapter-api 0.135.0, db-sync 0.15.2: the former ban names are gone
 
 - **Breaking (source, binary and wire).** Removed: `targetType` / `targetValue` / `targetName` and `reason` of

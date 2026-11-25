@@ -14,6 +14,13 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.137.1: `blockedByCharacterId`, группа настроек `fishing`
+
+- `AppSessionCheckResult` и `extensions` отказа команды сессии из приложения получили `blockedByCharacterId`: персонаж,
+  который занимает слот. `GameSettings` получил nullable-группу `fishing` с действующими лимитами рыбалки.
+- **Несовместимо (исходники и бинарно).** Конструкторы `AppSessionCheckResult` и `GameSettings` принимают на один
+  аргумент больше. Собирайте их через `builder()`.
+
 ## nx-gs-adapter-api 0.135.0, db-sync 0.15.2: прежние имена полей бана сняты
 
 - **Breaking (source, binary и wire).** Удалены `targetType` / `targetValue` / `targetName` и `reason` у `BanCommand`,
