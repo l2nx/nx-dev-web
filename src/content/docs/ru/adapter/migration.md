@@ -14,6 +14,15 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.135.0, db-sync 0.15.2: прежние имена полей бана сняты
+
+- **Breaking (source, binary и wire).** Удалены `targetType` / `targetValue` / `targetName` и `reason` у `BanCommand`,
+  `UnbanCommand` и `BanDbDto`, `removedBans` у `UnbanResult` и `WellKnownBanTargetTypes` вместе с `HARD`. На wire
+  передаются только `subjectType` / `subjectValue` / `subjectName`, `publicReason` и `unbannedBans`.
+- Чтобы прочитать команду платформы, хосту нужен api 0.134.0 или новее: прежних имён платформа больше не пишет.
+- Что сделать: перейти на новые имена и убрать ветку `HARD` из обработчиков бана: `HARD` — неизвестный `subjectType`,
+  ответ на него `VALIDATION_FAILED`.
+
 ## nx-gs-adapter-api 0.134.0, db-sync 0.15.1: `publicReason`
 
 - `BanCommand` и `BanDbDto` получают `publicReason` — причину бана, которую видит игрок. `reason` помечено `@Deprecated`

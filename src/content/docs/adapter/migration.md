@@ -14,6 +14,15 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.135.0, db-sync 0.15.2: the former ban names are gone
+
+- **Breaking (source, binary and wire).** Removed: `targetType` / `targetValue` / `targetName` and `reason` of
+  `BanCommand`, `UnbanCommand` and `BanDbDto`, `removedBans` of `UnbanResult`, and `WellKnownBanTargetTypes` with its
+  `HARD`. Only `subjectType` / `subjectValue` / `subjectName`, `publicReason` and `unbannedBans` travel on the wire.
+- A host needs api 0.134.0 or newer to read a command of the platform, which no longer writes the former names.
+- What to do: move to the new names, and drop the `HARD` branch of the ban handlers: `HARD` is an unknown
+  `subjectType`, answered with `VALIDATION_FAILED`.
+
 ## nx-gs-adapter-api 0.134.0, db-sync 0.15.1: `publicReason`
 
 - `BanCommand` and `BanDbDto` get `publicReason`: the ban reason a player sees. `reason` is `@Deprecated` and still
