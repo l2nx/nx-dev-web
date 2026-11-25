@@ -14,7 +14,13 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
-## nx-gs-adapter-api 0.137.1: `blockedByCharacterId`, the `fishing` settings group
+## nx-gs-adapter-api 0.138.0: no `FishingLimits` builder
+
+- **Breaking (source and binary).** `FishingLimits` has no builder: a limit left unset read as "off". Use the
+  constructor.
+- An invalid `blockedByCharacterId` of `AppSessionCheckResult` is read as `null` instead of failing the result.
+
+## nx-gs-adapter-api 0.137.0 and 0.137.1: `blockedByCharacterId`, the `fishing` settings group
 
 - `AppSessionCheckResult` and the extensions of a refused app-session command get `blockedByCharacterId`: the character
   that holds the slot. `GameSettings` gets the nullable `fishing` group with the effective fishing limits.
