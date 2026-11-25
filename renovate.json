@@ -1,4 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>l2nx/renovate-config"]
+  "extends": [
+    "github>l2nx/renovate-config-public"
+  ],
+  "hostRules": [
+    {
+      "matchHost": "npm.pkg.github.com",
+      "hostType": "npm",
+      "token": "{{ secrets.GITHUB_PACKAGES_TOKEN }}"
+    }
+  ]
 }
