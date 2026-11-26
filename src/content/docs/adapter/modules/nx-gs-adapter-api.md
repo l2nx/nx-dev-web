@@ -39,7 +39,7 @@ interfaces live in `app.l2nx.gs.adapter.api.spi.provider`.
 | `GameSettingsProvider`      | core (settings sync)                                                                              | no                                |
 
 Game data providers: `ItemTemplateProvider`, `NpcTemplateProvider`, `SkillProvider`, `RecipeTemplateProvider`,
-`ArmorSetTemplateProvider`, `SoulCrystalTemplateProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
+`ArmorSetTemplateProvider`, `SoulCrystalProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
 `InstanceTemplateProvider`, `GearScoreRulesetProvider`, `ItemOptionProvider`, `AugmentationTargetGroupProvider`,
 `LifeStoneProvider`, `FishingBaitProvider`, `FishingRodProvider`, `FishingShotProvider`.
 

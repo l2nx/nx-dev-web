@@ -14,6 +14,38 @@ description: Шаги обновления адаптера через breaking 
   что изменилось и что делать.
 - Документация всегда описывает текущую версию.
 
+## nx-gs-adapter-api 0.139.0, gd-sync 0.18.0: `ItemSkillType`, `SoulCrystal`, статы экономии зарядов и MP
+
+- **Несовместимо (исходники, бинарно и на проводе).** `ItemOptionTrigger` удалён. Скиллы шаблона предмета и опции
+  предмета используют один словарь `ItemSkillType` (`domain.item`): `EQUIPPED`, `EQUIPPED_ENCHANT`,
+  `EQUIPPED_BLESSED`, `ON_EQUIP`, `ON_UNEQUIP`, `ON_USE`, `ON_PHYSICAL_HIT`, `ON_NORMAL_ATTACK_CRITICAL_HIT`,
+  `ON_MAGIC_SKILL_CAST`. Константа без префикса — скилл, который держится, пока выполняется условие; константа с `ON_` —
+  разовый каст на этом событии.
+- `ItemSkillRef`: `type` теперь `ItemSkillType`, а не открытая строка, токен движка переезжает в новое обязательное
+  поле `typeRaw`. Новое `minEnchantLevel` задаётся ровно у `EQUIPPED_ENCHANT`; `chancePercent` (`[0, 100]`) задаётся
+  ровно у событий с шансом `ON_PHYSICAL_HIT`, `ON_NORMAL_ATTACK_CRITICAL_HIT` и `ON_MAGIC_SKILL_CAST`.
+- `ItemOptionSkill`: `trigger` заменён на `type` и обязательное `typeRaw`. `ATTACK` становится `ON_PHYSICAL_HIT`,
+  `MAGIC` — `ON_MAGIC_SKILL_CAST`, `CRITICAL` — `ON_NORMAL_ATTACK_CRITICAL_HIT`, выданный скилл без триггера —
+  `EQUIPPED`. Опция не может быть `EQUIPPED_ENCHANT`: у неё нет поля для порога.
+- Задавайте `type`, только когда токен движка означает ровно эту константу; иначе оставьте `null` и сохраните токен в
+  `typeRaw`. `typeRaw` никогда не пустой: где у движка нет токена, это имя конструкции движка, из которой выведен тип.
+  Билдеры отвергают нарушенную пару у известного типа (удерживаемый скилл с шансом, `EQUIPPED_ENCHANT` без порога);
+  конструкторы отвергают только пустой `typeRaw` и шанс вне диапазона. Собирайте каждый предмет и каждую опцию
+  отдельно и пропускайте отвергнутые со строкой в логе, а не весь снапшот.
+- **Несовместимо (исходники, бинарно и на проводе).** `SoulCrystalTemplate` и `SoulCrystalTemplateProvider`
+  становятся `SoulCrystal` (пакет `kafka.sync.gd.soulcrystal`) и `SoulCrystalProvider`; `id` становится
+  `itemTemplateId`, имя сущности — `soulcrystal`. `snapshot()` возвращает `null`, пока данные не загружены, и пустую
+  коллекцию, только когда в сборке нет кристаллов души.
+- В `Stat` появились `REDUCED_SOULSHOT_COUNT`, `REDUCED_SOULSHOT_CHANCE`, `REDUCED_MP_CONSUME_COUNT` и
+  `REDUCED_MP_CONSUME_CHANCE` — ключи `stats` шаблона предмета: когда свойство оружия срабатывает на атаке (шанс в
+  процентах), оружие тратит `count` зарядов души или MP вместо обычного количества. Разделите пару движка «шанс,
+  количество» на два ключа и отправляйте оба или ни одного; у оружия без этого свойства нет ни одного, никогда не `0`.
+- Что сделать: возьмите api 0.139.0 и gd-sync 0.18.0 вместе (gd-sync 0.17 ссылается на удалённый провайдер),
+  переведите токены движка в `ItemSkillType` с `typeRaw` рядом, переименуйте провайдер и его файл
+  `META-INF/services/app.l2nx.gs.adapter.api.spi.provider.SoulCrystalProvider` и отправляйте ключи экономии. Пока
+  игровой сервер не перезапущен на новом релизе хоста, платформа держит его опции предметов и кристаллы души по
+  последнему принятому снапшоту.
+
 ## nx-gs-adapter-api 0.138.0: `FishingLimits` без билдера
 
 - **Несовместимо (исходники и бинарно).** У `FishingLimits` нет билдера: незаданный лимит читался как «выключен».

@@ -14,6 +14,39 @@ here are drop-in: bump the version and restart.
   what changed, and what to do.
 - The documentation always describes the current version.
 
+## nx-gs-adapter-api 0.139.0, gd-sync 0.18.0: `ItemSkillType`, `SoulCrystal`, reduced consumption stats
+
+- **Breaking (source, binary and wire).** `ItemOptionTrigger` is removed. The skills of an item template and of an
+  item option share one vocabulary, `ItemSkillType` (`domain.item`): `EQUIPPED`, `EQUIPPED_ENCHANT`,
+  `EQUIPPED_BLESSED`, `ON_EQUIP`, `ON_UNEQUIP`, `ON_USE`, `ON_PHYSICAL_HIT`, `ON_NORMAL_ATTACK_CRITICAL_HIT`,
+  `ON_MAGIC_SKILL_CAST`. A constant without a prefix is a skill held while its condition lasts; a constant with `ON_`
+  is a one-time cast on that event.
+- `ItemSkillRef`: `type` is an `ItemSkillType` instead of an open string, and the engine token moves to the new
+  required `typeRaw`. New `minEnchantLevel` is set exactly for `EQUIPPED_ENCHANT`; `chancePercent` (`[0, 100]`) is set
+  exactly for the chance events `ON_PHYSICAL_HIT`, `ON_NORMAL_ATTACK_CRITICAL_HIT` and `ON_MAGIC_SKILL_CAST`.
+- `ItemOptionSkill`: `trigger` is replaced by `type` and the required `typeRaw`. `ATTACK` becomes `ON_PHYSICAL_HIT`,
+  `MAGIC` becomes `ON_MAGIC_SKILL_CAST`, `CRITICAL` becomes `ON_NORMAL_ATTACK_CRITICAL_HIT`, a granted skill without a
+  trigger becomes `EQUIPPED`. An option cannot be `EQUIPPED_ENCHANT`: it has no field for the threshold.
+- Set `type` only when the engine token means exactly that constant; otherwise leave it `null` and keep the token in
+  `typeRaw`. `typeRaw` is never empty: where the engine has no token, it is the name of the engine construct the type
+  comes from. The builders reject a broken pairing of a known type (a held skill with a chance, `EQUIPPED_ENCHANT`
+  without a threshold); the constructors reject only an empty `typeRaw` and a chance out of range. Build every item and
+  option on its own and skip a rejected one with a log line, never the whole snapshot.
+- **Breaking (source, binary and wire).** `SoulCrystalTemplate` and `SoulCrystalTemplateProvider` become `SoulCrystal`
+  (package `kafka.sync.gd.soulcrystal`) and `SoulCrystalProvider`; `id` becomes `itemTemplateId`, and the entity name is
+  `soulcrystal`. `snapshot()` returns `null` until the data is loaded and an empty collection only when the build has
+  no soul crystals.
+- `Stat` gets `REDUCED_SOULSHOT_COUNT`, `REDUCED_SOULSHOT_CHANCE`, `REDUCED_MP_CONSUME_COUNT` and
+  `REDUCED_MP_CONSUME_CHANCE`, keys of the item template's `stats`: when the weapon property procs on an attack
+  (chance in percent), the weapon spends `count` soulshots or MP instead of its normal amount. Split the engine's
+  chance and count pair into the two keys and send both or neither; a weapon without the property carries neither,
+  never `0`.
+- What to do: take api 0.139.0 and gd-sync 0.18.0 together (gd-sync 0.17 refers to the removed provider), map the
+  engine tokens into `ItemSkillType` with `typeRaw` beside them, rename the provider and its
+  `META-INF/services/app.l2nx.gs.adapter.api.spi.provider.SoulCrystalProvider` file, and send the reduced consumption
+  keys. Until a game server restarts on the new host release, the platform keeps its item options and soul crystals as
+  of their last accepted snapshot.
+
 ## nx-gs-adapter-api 0.138.0: no `FishingLimits` builder
 
 - **Breaking (source and binary).** `FishingLimits` has no builder: a limit left unset read as "off". Use the

@@ -39,7 +39,7 @@ Java 8. Тег релиза `api/vX.Y.Z`. Версии — на
 | `GameSettingsProvider`           | core (синхронизация настроек)                                                                            | нет                                 |
 
 Провайдеры игровых данных: `ItemTemplateProvider`, `NpcTemplateProvider`, `SkillProvider`, `RecipeTemplateProvider`,
-`ArmorSetTemplateProvider`, `SoulCrystalTemplateProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
+`ArmorSetTemplateProvider`, `SoulCrystalProvider`, `ExperienceLevelProvider`, `ClassTemplateProvider`,
 `InstanceTemplateProvider`, `GearScoreRulesetProvider`, `ItemOptionProvider`, `AugmentationTargetGroupProvider`,
 `LifeStoneProvider`, `FishingBaitProvider`, `FishingRodProvider`, `FishingShotProvider`.
 
