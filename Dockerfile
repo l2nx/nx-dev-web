@@ -10,7 +10,7 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
 COPY . .
 RUN pnpm build
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 8080
